@@ -81,6 +81,8 @@ export default function StockInput() {
     const [item] = await searchItem(sku) as any;
     if (item) {
       setCurrentProduct(item)
+    } else {
+      setCurrentProduct()
     }
 
     setAlreadySearched(true)
@@ -145,6 +147,15 @@ export default function StockInput() {
             </div>
             <TextInput id="sky" type="text" placeholder="Informe o SKU do Produto" required onChange={(e) => handleSkuChange(e.target.value)} />
           </div>
+
+          {currentProduct && (
+            <div className="my-6 max-w-sm">
+              <div className="mb-2 block">
+                <Label htmlFor="productName" value={`${currentProduct.active_principle ? 'Medicamento:' : 'Produto:'}`} />
+                </div>
+                <TextInput id="productName" type="text" placeholder="Nome do Produto" value={currentProduct.name || currentProduct.active_principle} disabled />
+            </div>
+          )}
 
           {(!currentProduct && alreadySearched) && (
             <>
@@ -250,8 +261,6 @@ export default function StockInput() {
 
                   </>
                 )}
-
-
             </>
           )}
 
