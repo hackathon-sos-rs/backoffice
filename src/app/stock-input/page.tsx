@@ -9,6 +9,7 @@ import searchItem from '@/services/directus-cms/searchItem';
 import createItemDirectus from '@/services/directus-cms/createItem';
 import useLocalStorageState from "@/hooks/useLocalStorageState";
 import { debounce } from "@/utils/input";
+import User from "@/components/User";
 
 
 export default function StockInput() {
@@ -169,6 +170,10 @@ export default function StockInput() {
   }
   return (
     <div className=" w-2/4 m-auto">
+
+      <div>
+        <User/>
+      </div>
 
       <div className="flex flex-row gap-4">
         <Select
