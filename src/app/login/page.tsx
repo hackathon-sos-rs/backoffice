@@ -1,32 +1,33 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import axios from 'axios';
-import { createDirectus, rest, createItem } from '@directus/sdk';
+import { login } from '@/services/directus-cms/login';
+import useLocalStorageState from '@/hooks/useLocalStorageState';
 
 const Login: React.FC = () => {
+  const [user, setUser] = useLocalStorageState('user', null);
   const [token, setToken] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
-  const client = 'https://sos-rs-stock-qa.star-ai.app/server/specs/graphql';
+
   const handleLogin = async () => {
     try {
-      const response = await axios.get(client, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-      if (response.status === 200) {
-        localStorage.setItem('accessToken', token);
-        router.push('/logado');
-      } else {
-        setError('Token inválido');
-      }
+      const userData = await login(token);
+      router.push('/stock-input');
     } catch (err) {
       setError('Token inválido');
     }
   };
+
+  useEffect(() => {
+    if (user && user.token) {
+      (async () => {
+        const userData = await login(user.token);
+        router.push('/stock-input');
+      })();
+    }
+  }, [user]);
 
   return (
     <div>
@@ -42,6 +43,7 @@ const Login: React.FC = () => {
           />
         </div>
         <button type="button" onClick={handleLogin}>Logar</button>
+        { error && <p>{error}</p> }
       </form>
     </div>
   );
