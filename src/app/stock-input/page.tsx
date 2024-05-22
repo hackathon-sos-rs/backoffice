@@ -6,7 +6,7 @@ import Select from 'react-select'
 import { CreateSelectOptions } from "../../utils/createSelectOptions";
 import getFields from '@/services/directus-cms/getFields';
 import searchItem from '@/services/directus-cms/searchItem';
-
+import createItemDirectus from '@/services/directus-cms/createItem';
 
 
 export default function StockInput() {
@@ -31,6 +31,12 @@ export default function StockInput() {
   const [currentProduct, setCurrentProduct] = useState() as any;
   const [alreadySearched, setAlreadySearched] = useState(false);
 
+  const [amount, setAmount] = useState(0);
+  const [itemName, setItemName] = useState('');
+  const [principle, setPrinciple] = useState('');
+  const [medicineVolume, setMedicineVolume] = useState(0);
+  const [validUntil, setValidUntil] = useState() as any;
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const getLocationsItems = async () => {
@@ -81,6 +87,13 @@ export default function StockInput() {
     const [item] = await searchItem(sku) as any;
     if (item) {
       setCurrentProduct(item)
+
+      if (item.active_principle) {
+        setItemType('medicine')
+      } else {
+        setItemType('geralItem')
+      }
+
     } else {
       setCurrentProduct()
     }
@@ -110,7 +123,48 @@ export default function StockInput() {
     }
   }
 
+  const createItem = async (e: any) => {
+    e.preventDefault();
+
+    setLoading(true);
+
+    if (currentProduct) {
+
+      if (itemType === 'medicine') {
+        const pharmaStock = {
+          sku: currentProduct.id,
+          amount,
+          valid_until: validUntil,
+          location: location.value,
+        }
+
+        console.log(pharmaStock);
+
+        const response = await createItemDirectus('pharma_stock', pharmaStock)
+        console.log(response);
+        
+      }
+
+      if (itemType === 'geralItem') {
+        // create a geral item
+        console.log('create a geral item')
+      }
+
+    }
+
+    setLoading(false);
+
+  }
+
+  // @TODO
   // create a ref for each field to pass on enter
+  // criar um item novo
+  // se for itemType === 'medicine' criar um medicamento
+  // se for itemType === 'geralItem' criar um item geral
+  // se for um item existente, pegar os dados da collection e inserir no estoque das respectivas tabelas
+  // trocar o componente de data para um datepicker funcional e melhor
+
+  console.log(validUntil);
 
   return (
      <div>
@@ -123,7 +177,7 @@ export default function StockInput() {
           Insira cuidadosamente os itens no estoque para que eles tenham um controle eficiente.
         </p>
 
-        <form>
+        <form onSubmit={createItem}>
           <div className="mb-2 block">
             <Label htmlFor="location" value="Localização:" />
           </div>
@@ -137,7 +191,7 @@ export default function StockInput() {
             />
 
             {location && (
-              <Button onClick={() => setLocation('')}>Unlock</Button>
+              <Button onClick={() => setLocation('')}>Liberar</Button>
             )}
           </div>
 
@@ -145,7 +199,7 @@ export default function StockInput() {
             <div className="mb-2 block">
               <Label htmlFor="sku" value="SKU:" />
             </div>
-            <TextInput id="sky" type="text" placeholder="Informe o SKU do Produto" required onChange={(e) => handleSkuChange(e.target.value)} />
+            <TextInput id="sku" type="text" placeholder="Informe o SKU do Produto" required onChange={(e) => handleSkuChange(e.target.value)} />
           </div>
 
           {currentProduct && (
@@ -176,7 +230,7 @@ export default function StockInput() {
                     <div className="mb-2 block">
                       <Label htmlFor="itemName" value="Nome do Item:" />
                     </div>
-                    <TextInput id="itemName" type="text" placeholder="Informe o nome do Item" required />
+                    <TextInput id="itemName" type="text" placeholder="Informe o nome do Item" required onChange={(e) => setItemName(e.target.value)} />
                   </div>
 
                   <div className="my-6 max-w-sm">
@@ -206,7 +260,7 @@ export default function StockInput() {
                       <div className="mb-2 block">
                         <Label htmlFor="principle" value="Princípio do Ativo:" />
                       </div>
-                      <TextInput id="principle" type="text" placeholder="Informe o principio Ativo do Medicamento" required />
+                      <TextInput id="principle" type="text" placeholder="Informe o principio Ativo do Medicamento" required  onChange={(e) => setPrinciple(e.target.value)}/>
                     </div>
 
                     <div className="my-6 max-w-sm">
@@ -244,7 +298,7 @@ export default function StockInput() {
                       <div className="mb-2 block">
                         <Label htmlFor="medicineVolume" value="Volume:" />
                       </div>
-                      <TextInput id="medicineVolume" type="number" placeholder="Volume" required />
+                      <TextInput id="medicineVolume" type="number" placeholder="Volume" required onChange={(e) => setMedicineVolume(+e.target.value)} />
                     </div>
 
                     <div className="my-6 max-w-sm">
@@ -268,7 +322,7 @@ export default function StockInput() {
                <div className="mb-2 block">
                   <Label htmlFor="amount" value="Quantidade:" />
                 </div>
-                <TextInput id="amount" type="number" placeholder="Informe a Quantidade do item" required />
+                <TextInput id="amount" type="number" placeholder="Informe a Quantidade do item" required onChange={(e) => setAmount(+e.target.value)} />
             </div>
 
 
@@ -286,12 +340,12 @@ export default function StockInput() {
               <div className="mb-2 block">
                  <Label htmlFor="expireDate" value="Validade:" />
                </div>
-               <Datepicker language="pt-BR" labelTodayButton="Hoje" labelClearButton="Limpar" minDate={new Date()} />
+               <Datepicker language="pt-BR" labelTodayButton="Hoje" labelClearButton="Limpar" minDate={new Date()} onChange={(e) => setValidUntil(e.target.value)} />
             </div>
             )}
             
             <div className="my-8">
-              <Button color="success">Salvar</Button>
+              <Button color="success" type="submit">Salvar</Button>
             </div>
         </form>
       </Card>
