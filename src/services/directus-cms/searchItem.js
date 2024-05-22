@@ -1,9 +1,10 @@
-import getItens from './getItems';
+import getItems from './getItems';
 
 async function searchItem(sku) {
-  const searchItemsReq = getItens({ searchField: 'ref_id', searchValue: sku, collection: 'item' });
-  const searchMedicinesReq = getItens({searchField: 'sku', searchValue: sku, collection: 'medication' });
-  
+  if (!sku.length) { return []; }
+  const searchItemsReq = getItems({ searchField: 'ref_id', searchValue: sku, collection: 'item' });
+  const searchMedicinesReq = getItems({ searchField: 'sku', searchValue: sku, collection: 'medication' });
+
   const [searchItems, searchMedicines] = await Promise.all([searchItemsReq, searchMedicinesReq]);
 
   if (searchItems.length) {

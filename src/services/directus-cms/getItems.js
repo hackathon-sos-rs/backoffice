@@ -1,7 +1,7 @@
 import { readItems } from '@directus/sdk';
 import directus from './directus';
 
-async function getItens({ searchField, searchValue, fields, collection }) {
+async function getItems({ searchField, searchValue, fields, collection }) {
   const filter = {};
 
   if (searchField) {
@@ -16,4 +16,4 @@ async function getItens({ searchField, searchValue, fields, collection }) {
   }));
 }
 
-export default getItens;
+export default getItems;

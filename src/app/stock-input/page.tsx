@@ -6,14 +6,23 @@ import Select from 'react-select'
 import { CreateSelectOptions } from "../../utils/createSelectOptions";
 import getFields from '@/services/directus-cms/getFields';
 import searchItem from '@/services/directus-cms/searchItem';
-
+import createItemDirectus from '@/services/directus-cms/createItem';
+import useLocalStorageState from "@/hooks/useLocalStorageState";
+import { debounce } from "@/utils/input";
 
 
 export default function StockInput() {
+
+  const [sku, setSku] = useState('');
+
+  const _setSku = debounce((value: string) => {
+    setSku(value);
+  }, 250);
+
   const [itemType, setItemType] = useState('');
   const [hasDueDate, setHasDueDate] = useState(false);
 
-  const [location, setLocation] = useState() as any;
+  const [location, setLocation] = useLocalStorageState('location', {}) as any;
   const [locationOptions, setLocationOptions] = useState();
 
   const [itemCategoryOptions, setItemCategoryOptions] = useState();
@@ -31,6 +40,12 @@ export default function StockInput() {
   const [currentProduct, setCurrentProduct] = useState() as any;
   const [alreadySearched, setAlreadySearched] = useState(false);
 
+  const [amount, setAmount] = useState(0);
+  const [itemName, setItemName] = useState('');
+  const [principle, setPrinciple] = useState('');
+  const [medicineVolume, setMedicineVolume] = useState(0);
+  const [validUntil, setValidUntil] = useState() as any;
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const getLocationsItems = async () => {
@@ -52,7 +67,7 @@ export default function StockInput() {
 
   useEffect(() => {
     const getConcentrationUnitOptions = async () => {
-      const concentrationUnits = await getFields({ fieldName: 'concentration_unit', collection: 'medication'});
+      const concentrationUnits = await getFields({ fieldName: 'concentration_unit', collection: 'medication' });
       setConcentrationUnitOptions(concentrationUnits.choices.map((choice: any) => ({ value: choice.value, label: choice.text })));
     }
 
@@ -81,6 +96,13 @@ export default function StockInput() {
     const [item] = await searchItem(sku) as any;
     if (item) {
       setCurrentProduct(item)
+
+      if (item.active_principle) {
+        setItemType('medicine')
+      } else {
+        setItemType('geralItem')
+      }
+
     } else {
       setCurrentProduct()
     }
@@ -88,11 +110,16 @@ export default function StockInput() {
     setAlreadySearched(true)
   }
 
-  const handleSkuChange = (value: string) => {
-    if (value.length >=  4) {
-      searchItemBySku(value);
+  const handleSkuChange = (value: string) => setSku(value);
+
+  useEffect(() => {
+    if (sku.length) {
+      searchItemBySku(sku);
+    } else {
+      setCurrentProduct()
+      setAlreadySearched(false)
     }
-  }
+  }, [sku]);
 
   const measureOptions = [
     { value: 'un', label: 'Unidade (UN)' },
@@ -105,196 +132,221 @@ export default function StockInput() {
   ];
 
   const handleChangeLocation = (value: any) => {
-    if (!location) {
-      setLocation(value);
-    }
+    setLocation(value);
   }
 
-  // create a ref for each field to pass on enter
+  const createItem = async (e: any) => {
+    e.preventDefault();
 
+    setLoading(true);
+
+    if (currentProduct) {
+
+      if (itemType === 'medicine') {
+        const pharmaStock = {
+          sku: currentProduct.id,
+          amount,
+          valid_until: validUntil,
+          location: location.value,
+        }
+
+        console.log(pharmaStock);
+
+        const response = await createItemDirectus('pharma_stock', pharmaStock)
+        console.log(response);
+
+      }
+
+      if (itemType === 'geralItem') {
+        // create a geral item
+        console.log('create a geral item')
+      }
+
+    }
+
+    setLoading(false);
+
+  }
   return (
-     <div>
+    <div className=" w-2/4 m-auto">
 
-      <Card className="min-w-full">
-        <h5 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
-          Demo - Inclusão de Estoque
-        </h5>
-        <p className="font-normal text-gray-700 dark:text-gray-400">
-          Insira cuidadosamente os itens no estoque para que eles tenham um controle eficiente.
-        </p>
+      <div className="flex flex-row gap-4">
+        <Select
+          options={locationOptions}
+          value={location}
+          className="w-full"
+          placeholder="Localização do estoque"
+          onChange={(e) => handleChangeLocation(e)}
+          isDisabled={!!location}
+          instanceId="location"
+        />
+        {location && (
+          <Button size={'sm'} onClick={() => setLocation(null)}>
+            Desbloquear
+          </Button>
+        )}
+      </div>
 
-        <form>
+      <h5 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white mt-8">
+        Inclusão de Estoque
+      </h5>
+
+      <form onSubmit={createItem} className="m-auto">
+
+        <div className="my-6">
           <div className="mb-2 block">
-            <Label htmlFor="location" value="Localização:" />
+            <Label htmlFor="sku" value="Código do Item ou Medicamento:" />
           </div>
-          <div className="flex flex-row gap-4">
-            <Select 
-              options={locationOptions}
-              placeholder="Selecione a localização do estoque" 
-              onChange={(e) => handleChangeLocation(e)}
-              isDisabled={!!location}
-              instanceId="location"
-            />
+          <TextInput id="sku" type="text" placeholder="Informe o Código do Item ou Medicamento" required onChange={(e) => _setSku(e.target.value)} />
+        </div>
 
-            {location && (
-              <Button onClick={() => setLocation('')}>Unlock</Button>
-            )}
-          </div>
-
-          <div className="my-6 max-w-sm">
+        {currentProduct && (
+          <div className="my-6">
             <div className="mb-2 block">
-              <Label htmlFor="sku" value="SKU:" />
+              <Label htmlFor="productName" value={`${currentProduct.active_principle ? 'Medicamento:' : 'Produto:'}`} />
             </div>
-            <TextInput id="sky" type="text" placeholder="Informe o SKU do Produto" required onChange={(e) => handleSkuChange(e.target.value)} />
+            <TextInput id="productName" type="text" placeholder="Nome do Produto" value={currentProduct.name || currentProduct.active_principle} disabled />
           </div>
+        )}
 
-          {currentProduct && (
-            <div className="my-6 max-w-sm">
-              <div className="mb-2 block">
-                <Label htmlFor="productName" value={`${currentProduct.active_principle ? 'Medicamento:' : 'Produto:'}`} />
-                </div>
-                <TextInput id="productName" type="text" placeholder="Nome do Produto" value={currentProduct.name || currentProduct.active_principle} disabled />
-            </div>
-          )}
-
-          {(!currentProduct && alreadySearched) && (
-            <>
-              <fieldset className="flex max-w-md flex-col gap-4">
-                  <legend className="mb-4">Selecione o tipo do Item:</legend>
-                  <div className="flex items-center gap-2">
-                    <Radio id="geralItem" name="itemType" value="geralItem" onChange={(e) => setItemType('geralItem')} />
-                    <Label htmlFor="geralItem">Item Geral</Label>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Radio id="medicine" name="itemType" value="medicine" onChange={(e) => setItemType('medicine')} />
-                    <Label htmlFor="medicine">Medicamento</Label>
-                  </div>
-              </fieldset>
-              { itemType === 'geralItem' && (
-                <>
-                  <div className="my-6 max-w-sm">
-                    <div className="mb-2 block">
-                      <Label htmlFor="itemName" value="Nome do Item:" />
-                    </div>
-                    <TextInput id="itemName" type="text" placeholder="Informe o nome do Item" required />
-                  </div>
-
-                  <div className="my-6 max-w-sm">
-                    <div className="mb-2 block">
-                      <Label htmlFor="itemCategory" value="Categoria:" />
-                    </div>
-                    <Select 
-                      options={itemCategoryOptions} 
-                      placeholder="Selecione a categoria do Item" 
-                      instanceId="itemCategory" 
-                      onChange={(e) => setItemCategory(e)}
-                    />
-                  </div>
-
-                  <div className="my-6 max-w-sm">
-                    <div className="mb-2 block">
-                      <Label htmlFor="itemMeasure" value="Unidade de Medida:" />
-                    </div>
-                    <Select options={measureOptions} placeholder="Selecione a unidade de Medida do Item" instanceId="itemMeasure"  />
-                  </div>
-                </>
-              )}
-
-              {itemType === 'medicine' && (
-                  <>
-                    <div className="my-6 max-w-sm">
-                      <div className="mb-2 block">
-                        <Label htmlFor="principle" value="Princípio do Ativo:" />
-                      </div>
-                      <TextInput id="principle" type="text" placeholder="Informe o principio Ativo do Medicamento" required />
-                    </div>
-
-                    <div className="my-6 max-w-sm">
-                      <div className="mb-2 block">
-                        <Label htmlFor="medicineConcentration" value="Concentração:" />
-                      </div>
-                      <TextInput id="medicineConcentration" type="number" placeholder="Concentração" required />
-                    </div>
-
-                    <div className="my-6 max-w-sm">
-                      <div className="mb-2 block">
-                        <Label htmlFor="medicineConcentrationUnit" value="Unidade da Concentração:" />
-                      </div>
-                      <Select 
-                        options={concentrationUnitOptions} 
-                        placeholder="Selecione a unidade de concentração" 
-                        instanceId="medicineConcentrationUnit" 
-                        onChange={(e) => setConcentrationUnit(e)}
-                      />
-                    </div>
-
-                    <div className="my-6 max-w-sm">
-                      <div className="mb-2 block">
-                        <Label htmlFor="medicineForm" value="Forma:" />
-                      </div>
-                      <Select 
-                        options={medicineFormOptions}
-                        placeholder="Selecione a forma" 
-                        instanceId="medicineForm"
-                        onChange={(e) => setMedicineForm(e)}
-                      />
-                    </div>
-
-                    <div className="my-6 max-w-sm">
-                      <div className="mb-2 block">
-                        <Label htmlFor="medicineVolume" value="Volume:" />
-                      </div>
-                      <TextInput id="medicineVolume" type="number" placeholder="Volume" required />
-                    </div>
-
-                    <div className="my-6 max-w-sm">
-                      <div className="mb-2 block">
-                        <Label htmlFor="medicineTherapeuticClass" value="Classe Terapêutica:" />
-                      </div>
-                      <Select 
-                        options={medicineTherapeuticClassOptions}
-                        placeholder="Selecione a classe"
-                        instanceId="medicineTherapeuticClass"
-                        onChange={(e) => setMedicineTherapeuticClass(e)}
-                      />
-                    </div>
-
-                  </>
-                )}
-            </>
-          )}
-
-            <div className="my-6 max-w-sm">
-               <div className="mb-2 block">
-                  <Label htmlFor="amount" value="Quantidade:" />
-                </div>
-                <TextInput id="amount" type="number" placeholder="Informe a Quantidade do item" required />
-            </div>
-
-
-            {!(itemType === 'medicine') && (
+        {(!currentProduct && alreadySearched) && (
+          <>
+            <fieldset className="flex max-w-md flex-col gap-4">
+              <legend className="mb-4">Selecione o tipo do Item:</legend>
               <div className="flex items-center gap-2">
-                <Checkbox id="dueDate" onChange={(e) => setHasDueDate(e.target.checked)} checked={hasDueDate} />
-                <Label htmlFor="dueDate" className="flex">
-                  Possui data de Vencimento
-                </Label>
+                <Radio id="geralItem" name="itemType" value="geralItem" onChange={(e) => setItemType('geralItem')} />
+                <Label htmlFor="geralItem">Item Geral</Label>
               </div>
+              <div className="flex items-center gap-2">
+                <Radio id="medicine" name="itemType" value="medicine" onChange={(e) => setItemType('medicine')} />
+                <Label htmlFor="medicine">Medicamento</Label>
+              </div>
+            </fieldset>
+            {itemType === 'geralItem' && (
+              <>
+                <div className="my-6">
+                  <div className="mb-2 block">
+                    <Label htmlFor="itemName" value="Nome do Item:" />
+                  </div>
+                  <TextInput id="itemName" type="text" placeholder="Informe o nome do Item" required onChange={(e) => setItemName(e.target.value)} />
+                </div>
+
+                <div className="my-6">
+                  <div className="mb-2 block">
+                    <Label htmlFor="itemCategory" value="Categoria:" />
+                  </div>
+                  <Select
+                    options={itemCategoryOptions}
+                    placeholder="Selecione a categoria do Item"
+                    instanceId="itemCategory"
+                    onChange={(e) => setItemCategory(e)}
+                  />
+                </div>
+
+                <div className="my-6">
+                  <div className="mb-2 block">
+                    <Label htmlFor="itemMeasure" value="Unidade de Medida:" />
+                  </div>
+                  <Select options={measureOptions} placeholder="Selecione a unidade de Medida do Item" instanceId="itemMeasure" />
+                </div>
+              </>
             )}
 
-            {(hasDueDate || itemType === 'medicine') && (
-              <div className="my-6 max-w-sm">
-              <div className="mb-2 block">
-                 <Label htmlFor="expireDate" value="Validade:" />
-               </div>
-               <Datepicker language="pt-BR" labelTodayButton="Hoje" labelClearButton="Limpar" minDate={new Date()} />
-            </div>
+            {itemType === 'medicine' && (
+              <>
+                <div className="my-6">
+                  <div className="mb-2 block">
+                    <Label htmlFor="principle" value="Princípio do Ativo:" />
+                  </div>
+                  <TextInput id="principle" type="text" placeholder="Informe o principio Ativo do Medicamento" required onChange={(e) => setPrinciple(e.target.value)} />
+                </div>
+
+                <div className="my-6">
+                  <div className="mb-2 block">
+                    <Label htmlFor="medicineConcentration" value="Concentração:" />
+                  </div>
+                  <TextInput id="medicineConcentration" type="number" placeholder="Concentração" required />
+                </div>
+
+                <div className="my-6">
+                  <div className="mb-2 block">
+                    <Label htmlFor="medicineConcentrationUnit" value="Unidade da Concentração:" />
+                  </div>
+                  <Select
+                    options={concentrationUnitOptions}
+                    placeholder="Selecione a unidade de concentração"
+                    instanceId="medicineConcentrationUnit"
+                    onChange={(e) => setConcentrationUnit(e)}
+                  />
+                </div>
+
+                <div className="my-6">
+                  <div className="mb-2 block">
+                    <Label htmlFor="medicineForm" value="Forma:" />
+                  </div>
+                  <Select
+                    options={medicineFormOptions}
+                    placeholder="Selecione a forma"
+                    instanceId="medicineForm"
+                    onChange={(e) => setMedicineForm(e)}
+                  />
+                </div>
+
+                <div className="my-6">
+                  <div className="mb-2 block">
+                    <Label htmlFor="medicineVolume" value="Volume:" />
+                  </div>
+                  <TextInput id="medicineVolume" type="number" placeholder="Volume" required onChange={(e) => setMedicineVolume(+e.target.value)} />
+                </div>
+
+                <div className="my-6">
+                  <div className="mb-2 block">
+                    <Label htmlFor="medicineTherapeuticClass" value="Classe Terapêutica:" />
+                  </div>
+                  <Select
+                    options={medicineTherapeuticClassOptions}
+                    placeholder="Selecione a classe"
+                    instanceId="medicineTherapeuticClass"
+                    onChange={(e) => setMedicineTherapeuticClass(e)}
+                  />
+                </div>
+
+              </>
             )}
-            
-            <div className="my-8">
-              <Button color="success">Salvar</Button>
+          </>
+        )}
+
+        <div className="my-6">
+          <div className="mb-2 block">
+            <Label htmlFor="amount" value="Quantidade:" />
+          </div>
+          <TextInput id="amount" type="number" placeholder="Informe a Quantidade do item" required onChange={(e) => setAmount(+e.target.value)} />
+        </div>
+
+
+        {!(itemType === 'medicine') && (
+          <div className="flex items-center gap-2">
+            <Checkbox id="dueDate" onChange={(e) => setHasDueDate(e.target.checked)} checked={hasDueDate} />
+            <Label htmlFor="dueDate" className="flex">
+              Possui data de Vencimento
+            </Label>
+          </div>
+        )}
+
+        {(hasDueDate || itemType === 'medicine') && (
+          <div className="my-6">
+            <div className="mb-2 block">
+              <Label htmlFor="expireDate" value="Validade:" />
             </div>
-        </form>
-      </Card>
+            <Datepicker language="pt-BR" labelTodayButton="Hoje" labelClearButton="Limpar" minDate={new Date()} onChange={(e) => setValidUntil(e.target.value)} />
+          </div>
+        )}
+
+        <div className="my-8">
+          <Button color="success" type="submit">Salvar</Button> 
+        </div>
+      </form>
+
     </div>
   )
 }
