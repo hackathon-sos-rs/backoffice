@@ -3,11 +3,13 @@
 import { useEffect, useState } from 'react'
 import { Card, Label, Radio, TextInput, Button } from 'flowbite-react'
 import Select from 'react-select'
-import { CreateSelectOptions } from '../../utils/createSelectOptions'
+import { CreateSelectOptions } from '../../../utils/createSelectOptions'
 import { Priority } from '@/enums/priority'
 import { Controller, useForm } from 'react-hook-form'
 
-export default function StockInput() {
+interface DemandRequest {}
+
+export default function DemandRequest() {
   const {
     register,
     handleSubmit,
@@ -56,7 +58,7 @@ export default function StockInput() {
   }, [])
 
   useEffect(() => {
-    fetchData('medication', 'id', 'sku', setMedicationOptions)
+    fetchData('medication', 'id', 'active_principle', setMedicationOptions)
   }, [])
 
   const onSubmit = (data: any) => {
@@ -64,7 +66,7 @@ export default function StockInput() {
   }
 
   return (
-    <div className='flex justify-center'>
+    <div className='flex justify-center items-center'>
       <Card className='min-w-sm'>
         <h5 className='text-2xl font-bold tracking-tight text-gray-900 dark:text-white'>
           Demo - Pedido de Demanda
@@ -200,6 +202,7 @@ export default function StockInput() {
                   control={control}
                   render={({ field }) => (
                     <Select
+                      className='w-full'
                       {...field}
                       options={medicationOptions}
                       placeholder='Selecione um medicamento'
