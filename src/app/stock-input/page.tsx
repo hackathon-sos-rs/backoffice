@@ -1,18 +1,19 @@
 'use client';
 
-import { useEffect, useState } from "react";
-import { Card, Datepicker, Checkbox, Label, Radio, TextInput, Button } from "flowbite-react";
+import { useEffect, useRef, useState } from "react";
+import { Datepicker, Checkbox, Label, Radio, TextInput, Button } from "flowbite-react";
 import Select from 'react-select'
 import { CreateSelectOptions } from "../../utils/createSelectOptions";
 import getFields from '@/services/directus-cms/getFields';
 import searchItem from '@/services/directus-cms/searchItem';
-import createItemDirectus from '@/services/directus-cms/createItem';
 import useLocalStorageState from "@/hooks/useLocalStorageState";
 import { debounce } from "@/utils/input";
 import User from "@/components/User";
+import { StockInputType, StockInput, saveStock } from "@/services/directus-cms/stock";
+import useFlash from "@/hooks/useFlash";
 
 
-export default function StockInput() {
+export default function StockInputPage() {
 
   const [sku, setSku] = useState('');
 
@@ -20,8 +21,14 @@ export default function StockInput() {
     setSku(value);
   }, 250);
 
+  const formRef = useRef<HTMLFormElement>(null)
+
+  const [error, setError] = useFlash(null, 1000);
+  const [success, setSuccess] = useFlash(null, 1000);
+
   const [itemType, setItemType] = useState('');
   const [hasDueDate, setHasDueDate] = useState(false);
+  const [batch, setBatch] = useState('');
 
   const [location, setLocation] = useLocalStorageState('location', {}) as any;
   const [locationOptions, setLocationOptions] = useState();
@@ -31,12 +38,16 @@ export default function StockInput() {
 
   const [concentrationUnitOptions, setConcentrationUnitOptions] = useState() as any;
   const [concentrationUnit, setConcentrationUnit] = useState() as any;
+  const [concentration, setConcentration] = useState<number>(0) as any;
 
   const [medicineFormOptions, setMedicineFormOptions] = useState() as any;
   const [medicineForm, setMedicineForm] = useState() as any;
 
   const [medicineTherapeuticClassOptions, setMedicineTherapeuticClassOptions] = useState() as any;
   const [medicineTherapeuticClass, setMedicineTherapeuticClass] = useState() as any;
+
+  const [medicationManufacturerOptions, setMedicationManufacturerOptions] = useState() as any;
+  const [medicationManufacturer, setMedicationManufacturer] = useState() as any;
 
   const [currentProduct, setCurrentProduct] = useState() as any;
   const [alreadySearched, setAlreadySearched] = useState(false);
@@ -45,8 +56,17 @@ export default function StockInput() {
   const [itemName, setItemName] = useState('');
   const [principle, setPrinciple] = useState('');
   const [medicineVolume, setMedicineVolume] = useState(0);
-  const [validUntil, setValidUntil] = useState() as any;
+  const [validUntil, setValidUntil] = useState(new Date()) as any;
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const getMedicationManufacturer = async () => {
+      const values = await CreateSelectOptions('medication_manufacturer', 'id', 'name') as any;
+      setMedicationManufacturerOptions(values);
+    }
+
+    getMedicationManufacturer();
+  }, []);
 
   useEffect(() => {
     const getLocationsItems = async () => {
@@ -101,7 +121,7 @@ export default function StockInput() {
       if (item.active_principle) {
         setItemType('medicine')
       } else {
-        setItemType('geralItem')
+        setItemType('generalItem')
       }
 
     } else {
@@ -136,43 +156,102 @@ export default function StockInput() {
     setLocation(value);
   }
 
+  const reset = () => {
+    setSku((prev: any) => '');
+    setItemType((prev: any) => '');
+    setHasDueDate((prev: any) => false);
+    setBatch((prev: any) => '');
+    setItemCategory((prev: any) => null);
+    setConcentrationUnit((prev: any) => null);
+    setConcentration((prev: any) => 0);
+    setMedicineForm((prev: any) => null);
+    setMedicineTherapeuticClass((prev: any) => null);
+    setMedicationManufacturer((prev: any) => null);
+    setCurrentProduct((prev: any) => null);
+    setAlreadySearched((prev: any) => false);
+    setAmount((prev: any) => 0);
+    setItemName((prev: any) => '');
+    setPrinciple((prev: any) => '');
+    setMedicineVolume((prev: any) => 0);
+    setValidUntil((prev: any) => new Date());
+
+    formRef.current?.reset();
+    formRef.current?.querySelector('input')?.focus()
+  }
+
   const createItem = async (e: any) => {
     e.preventDefault();
 
     setLoading(true);
 
-    if (currentProduct) {
+    const isMedicine = itemType === 'medicine';
+    const isGeneralItem = itemType === 'generalItem';
+    const isFresh = !currentProduct;
 
-      if (itemType === 'medicine') {
-        const pharmaStock = {
-          sku: currentProduct.id,
-          amount,
-          valid_until: validUntil,
-          location: location.value,
-        }
+    let generalItem = undefined;
+    let medicineItem = undefined;
 
-        console.log(pharmaStock);
-
-        const response = await createItemDirectus('pharma_stock', pharmaStock)
-        console.log(response);
-
+    if (isGeneralItem && isFresh) {
+      generalItem = {
+        name: itemName,
+        category: itemCategory.value,
+        unit: 'un',
       }
+    }
 
-      if (itemType === 'geralItem') {
-        // create a geral item
-        console.log('create a geral item')
+    if (isMedicine && isFresh) {
+      medicineItem = {
+        activePrinciple: principle,
+        concentration: concentration,
+        concentrationUnit: concentrationUnit.value,
+        form: medicineForm.value,
+        therapeuticClass: medicineTherapeuticClass.value,
+        volume: medicineVolume,
       }
+    }
 
+    const input: StockInput = {
+      sku,
+      itemId: currentProduct?.id,
+      inputType: isMedicine ? StockInputType.MEDICINE : StockInputType.GENERAL,
+      location: location.value,
+      validUntil,
+      quantity: amount,
+      batch: batch,
+      manufacturer: (medicationManufacturer && medicationManufacturer.value) || undefined,
+      medicine: medicineItem,
+      general: generalItem,
+    }
+
+    try {
+      const output = await saveStock(input);
+      reset()
+      setSuccess('Item salvo com sucesso');
+    } catch (err: any) {
+      setError(err.message);
     }
 
     setLoading(false);
-
   }
+
   return (
     <div className=" w-2/4 m-auto">
 
+      <div className="fixed w-screen top-0 right-0 z-10">
+        { error && (
+          <div className="w-full p-4 bg-red-500 text-white">
+            <p>{ error }</p>
+          </div>
+        )}
+        { success && (
+          <div className="w-full p-4 bg-green-500 text-white">
+            <p> { success } </p>
+          </div>
+        )}
+      </div>
+
       <div>
-        <User/>
+        <User />
       </div>
 
       <div className="flex flex-row gap-4">
@@ -192,11 +271,12 @@ export default function StockInput() {
         )}
       </div>
 
-      <h5 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white mt-8">
-        Inclusão de Estoque
-      </h5>
+      <form ref={formRef} onSubmit={createItem} className="m-auto">
 
-      <form onSubmit={createItem} className="m-auto">
+        <h5 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white mt-8">
+          Inclusão de Estoque
+        </h5>
+
 
         <div className="my-6">
           <div className="mb-2 block">
@@ -219,15 +299,15 @@ export default function StockInput() {
             <fieldset className="flex max-w-md flex-col gap-4">
               <legend className="mb-4">Selecione o tipo do Item:</legend>
               <div className="flex items-center gap-2">
-                <Radio id="geralItem" name="itemType" value="geralItem" onChange={(e) => setItemType('geralItem')} />
-                <Label htmlFor="geralItem">Item Geral</Label>
+                <Radio id="generalItem" name="itemType" value="generalItem" onChange={(e) => setItemType('generalItem')} />
+                <Label htmlFor="generalItem">Item Geral</Label>
               </div>
               <div className="flex items-center gap-2">
                 <Radio id="medicine" name="itemType" value="medicine" onChange={(e) => setItemType('medicine')} />
                 <Label htmlFor="medicine">Medicamento</Label>
               </div>
             </fieldset>
-            {itemType === 'geralItem' && (
+            {itemType === 'generalItem' && (
               <>
                 <div className="my-6">
                   <div className="mb-2 block">
@@ -270,7 +350,7 @@ export default function StockInput() {
                   <div className="mb-2 block">
                     <Label htmlFor="medicineConcentration" value="Concentração:" />
                   </div>
-                  <TextInput id="medicineConcentration" type="number" placeholder="Concentração" required />
+                  <TextInput id="medicineConcentration" type="number" value={concentration} min={0} placeholder="Concentração" required onChange={(e) => setConcentration(e.target.value)} />
                 </div>
 
                 <div className="my-6">
@@ -328,14 +408,38 @@ export default function StockInput() {
           <TextInput id="amount" type="number" placeholder="Informe a Quantidade do item" required onChange={(e) => setAmount(+e.target.value)} />
         </div>
 
+        {(itemType === 'medicine') && (
+          <>
+            <div className="my-6">
+              <div className="mb-2 block">
+                <Label htmlFor="batch" value="Lote:" />
+              </div>
+              <TextInput id="batch" type="number" placeholder="Informe o Lote" required onChange={(e) => setBatch(e.target.value)} />
+            </div>
+            <div className="my-6">
+              <div className="mb-2 block">
+                <Label htmlFor="manufacture" value="Fabricante:" />
+              </div>
+              <Select
+                options={medicationManufacturerOptions}
+                placeholder="Selecione o fabricante"
+                instanceId="manufacture"
+                onChange={(e) => setMedicationManufacturer(e)}
+              />
+            </div>
+          </>
+        )}
+
 
         {!(itemType === 'medicine') && (
-          <div className="flex items-center gap-2">
-            <Checkbox id="dueDate" onChange={(e) => setHasDueDate(e.target.checked)} checked={hasDueDate} />
-            <Label htmlFor="dueDate" className="flex">
-              Possui data de Vencimento
-            </Label>
-          </div>
+          <>
+            <div className="flex items-center gap-2">
+              <Checkbox id="dueDate" onChange={(e) => setHasDueDate(e.target.checked)} checked={hasDueDate} />
+              <Label htmlFor="dueDate" className="flex">
+                Possui data de Vencimento
+              </Label>
+            </div>
+          </>
         )}
 
         {(hasDueDate || itemType === 'medicine') && (
@@ -348,7 +452,7 @@ export default function StockInput() {
         )}
 
         <div className="my-8">
-          <Button color="success" type="submit">Salvar</Button> 
+          <Button color="success" type="submit">Salvar</Button>
         </div>
       </form>
 

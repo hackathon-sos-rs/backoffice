@@ -17,13 +17,11 @@ const User = () => {
          <div className="border p-4 mb-5 flex flex-row gap-5">
             <span>{user.userData.first_name} {user.userData.last_name}</span>
 
-            {user.userData.identifiers && user.userData.identifiers.map((identifier: any) =>
-               <>
-                  <span>
-                     <span className="font-bold mr-1">{identifier.type}:</span>
-                     <span>{identifier.value}</span>
-                  </span>
-               </>
+            {user.userData.identifiers && user.userData.identifiers.map((identifier: any, index: number) =>
+               <span key={index}>
+                  <span className="font-bold mr-1">{identifier.type}:</span>
+                  <span>{identifier.value}</span>
+               </span>
             )}
 
             <button className="underline self-end" onClick={() => confirm('Voce tem certeza?') && setUser(null)}> Sair </button>
