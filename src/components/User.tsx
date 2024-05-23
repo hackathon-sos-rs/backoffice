@@ -14,7 +14,7 @@ const User = () => {
 
    return (<>
       {  user && user.userData &&
-         <div className="border p-4 mb-5 flex flex-row gap-5">
+         <div className="border rounded p-4 mb-5 flex flex-row gap-5">
             <span>{user.userData.first_name} {user.userData.last_name}</span>
 
             {user.userData.identifiers && user.userData.identifiers.map((identifier: any) =>

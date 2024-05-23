@@ -3,18 +3,24 @@
 import { useEffect, useState } from 'react'
 import { Card, Label, Radio, TextInput, Button } from 'flowbite-react'
 import Select from 'react-select'
-import { CreateSelectOptions } from '../../../utils/createSelectOptions'
+import {
+  CreateSelectOptions,
+  ItemOption,
+} from '../../../utils/createSelectOptions'
 import { Priority } from '@/enums/priority'
 import { Controller, useForm } from 'react-hook-form'
+import User from '@/components/User'
+import { useRouter } from 'next/navigation'
+import createItemDirectus from '@/services/directus-cms/createItem'
 
 interface DemandRequest {}
 
 export default function DemandRequest() {
+  const router = useRouter()
+
   const {
     register,
     handleSubmit,
-    setValue,
-    watch,
     control,
     formState: { errors },
   } = useForm()
@@ -24,10 +30,15 @@ export default function DemandRequest() {
     label: value,
   }))
 
-  const [distributionCenterOptions, setDistributionCenterOptions] = useState([])
-  const [deliveryPointOptions, setDeliveryPointOptions] = useState()
-  const [itemOptions, setItemOptions] = useState()
-  const [medicationOptions, setMedicationOptions] = useState()
+  const [distributionCenterOptions, setDistributionCenterOptions] = useState<
+    ItemOption[]
+  >([])
+  const [deliveryPointOptions, setDeliveryPointOptions] = useState<
+    ItemOption[]
+  >([])
+  const [itemOptions, setItemOptions] = useState<ItemOption[]>([])
+  const [medicationOptions, setMedicationOptions] = useState<ItemOption[]>([])
+  const [isProcessing, setIsProcessing] = useState<boolean>(false)
 
   const [selectedOption, setSelectedOption] = useState<string>('item')
 
@@ -62,12 +73,20 @@ export default function DemandRequest() {
   }, [])
 
   const onSubmit = (data: any) => {
-    console.log(data)
+    setIsProcessing(true)
+    createItemDirectus('demand', data)
+      .then(() => router.push('/demand'))
+      .catch((err) => console.error(err))
+      .finally(() => setIsProcessing(false))
   }
 
   return (
-    <div className='flex justify-center items-center'>
-      <Card className='min-w-sm'>
+    <div className='fflex flex-col justify-center items-center p-2'>
+      <div className='w-full'>
+        <User />
+      </div>
+
+      <Card className='w-full'>
         <h5 className='text-2xl font-bold tracking-tight text-gray-900 dark:text-white'>
           Demo - Pedido de Demanda
         </h5>
@@ -86,14 +105,21 @@ export default function DemandRequest() {
               </div>
               <div className='flex flex-row gap-4'>
                 <Controller
-                  name='distributionCenter'
+                  name='cd'
                   control={control}
                   render={({ field }) => (
                     <Select
+                      required
                       className='w-full'
                       {...field}
                       options={distributionCenterOptions}
                       placeholder='Selecione um centro de distribuição'
+                      value={distributionCenterOptions.find(
+                        (option) => option.value === field.value
+                      )}
+                      onChange={(selectedOption) =>
+                        field.onChange(selectedOption?.value)
+                      }
                     />
                   )}
                 />
@@ -109,10 +135,17 @@ export default function DemandRequest() {
                   control={control}
                   render={({ field }) => (
                     <Select
+                      required
                       className='w-full'
                       {...field}
                       options={priorityOptions}
                       placeholder='Prioridade'
+                      value={priorityOptions.find(
+                        (option) => option.value === field.value
+                      )}
+                      onChange={(selectedOption) =>
+                        field.onChange(selectedOption?.value)
+                      }
                     />
                   )}
                 />
@@ -125,14 +158,21 @@ export default function DemandRequest() {
           </div>
           <div className='flex flex-row gap-4'>
             <Controller
-              name='deliveryPoint'
+              name='delivery_point'
               control={control}
               render={({ field }) => (
                 <Select
+                  required
                   className='w-full'
                   {...field}
                   options={deliveryPointOptions}
                   placeholder='Selecione um ponto de entrega'
+                  value={deliveryPointOptions.find(
+                    (option) => option.value === field.value
+                  )}
+                  onChange={(selectedOption) =>
+                    field.onChange(selectedOption?.value)
+                  }
                 />
               )}
             />
@@ -172,7 +212,7 @@ export default function DemandRequest() {
           {selectedOption === 'item' && (
             <div>
               <div className='mb-2 block'>
-                <Label htmlFor='distributionCenter' value='Item:' />
+                <Label htmlFor='distri‰butionCenter' value='Item:' />
               </div>
               <div className='flex flex-row gap-4'>
                 <Controller
@@ -184,6 +224,12 @@ export default function DemandRequest() {
                       {...field}
                       options={itemOptions}
                       placeholder='Selecione um item'
+                      value={itemOptions.find(
+                        (option) => option.value === field.value
+                      )}
+                      onChange={(selectedOption) =>
+                        field.onChange(selectedOption?.value)
+                      }
                     />
                   )}
                 />
@@ -206,6 +252,12 @@ export default function DemandRequest() {
                       {...field}
                       options={medicationOptions}
                       placeholder='Selecione um medicamento'
+                      value={medicationOptions.find(
+                        (option) => option.value === field.value
+                      )}
+                      onChange={(selectedOption) =>
+                        field.onChange(selectedOption?.value)
+                      }
                     />
                   )}
                 />
@@ -229,8 +281,11 @@ export default function DemandRequest() {
             )}
           </div>
 
-          <div className='my-8'>
-            <Button type='submit' color='success'>
+          <div className='my-8 flex w-full justify-between'>
+            <Button onClick={() => router.push('/demand')} color='warning'>
+              Voltar
+            </Button>
+            <Button isProcessing={isProcessing} type='submit' color='success'>
               Salvar
             </Button>
           </div>
