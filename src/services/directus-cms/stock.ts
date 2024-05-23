@@ -121,13 +121,14 @@ export async function saveMedicineStock(stock: StockInput) {
    debugger;
 
    return directus.request(
-      createItem('pharma_stock', {
+      createItem('pharma_stock_events', {
          sku: itemId,
          batch: stock.batch,
          amount: stock.quantity,
          valid_until: stock.validUntil,
          manufacturer: stock.manufacturer,
          location: stock.location,
+         inout: 'in'
       })
    );
 }

@@ -81,14 +81,14 @@ export default function DemandRequest() {
   }
 
   return (
-    <div className='fflex flex-col justify-center items-center p-2'>
+    <div className='flex flex-col justify-center items-center p-2 w-2/4 m-auto'>
       <div className='w-full'>
         <User />
       </div>
 
       <Card className='w-full'>
         <h5 className='text-2xl font-bold tracking-tight text-gray-900 dark:text-white'>
-          Demo - Pedido de Demanda
+          Pedido de Demanda
         </h5>
         <p className='font-normal text-gray-700 dark:text-gray-400'>
           Solicite uma nova demanda de acordo com a necessidade dos abrigos

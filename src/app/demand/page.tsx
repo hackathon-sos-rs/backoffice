@@ -103,7 +103,7 @@ export default function DemandInbox() {
       <Card className='w-full'>
         <div className='flex w-full justify-between'>
           <h5 className='text-2xl font-bold tracking-tight text-gray-900 dark:text-white'>
-            Demo - Demandas Solicitadas
+            Demandas Solicitadas
           </h5>
           <Button onClick={() => router.push('demand/request')} color='success'>
             Solicitar
