@@ -2,3 +2,57 @@
 @tailwind components;
 @tailwind utilities;
 
+
+@keyframes cloudAnimation {
+  0% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.bg-clouds {
+  background: linear-gradient(270deg, #d4f5d1, #f5d1d1, #f5f1d1);
+  /* Tons pastel de verde, vermelho e amarelo */
+  background-size: 400% 400%;
+  animation: cloudAnimation 15s ease infinite;
+}
+
+/* src/LogoCarousel.css */
+.carousel-container {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  overflow: hidden;
+  background-color: rgba(255, 255, 255, 0.3);
+  padding: 3em 0;
+}
+
+.carousel {
+  display: flex;
+  width: calc(200px * 10);
+  animation: scroll 20s linear infinite;
+  gap: 3em;
+}
+
+.carousel-logo {
+  width: 200px;
+  height: auto;
+  margin: 0 10px;
+}
+
+@keyframes scroll {
+  0% {
+    transform: translateX(0);
+  }
+
+  100% {
+    transform: translateX(calc(-200px * 5));
+  }
+}

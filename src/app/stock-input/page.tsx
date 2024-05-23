@@ -23,6 +23,8 @@ export default function StockInputPage() {
 
   const formRef = useRef<HTMLFormElement>(null)
 
+  const [user, setUser] = useLocalStorageState('user', null);
+
   const [error, setError] = useFlash(null, 1000);
   const [success, setSuccess] = useFlash(null, 1000);
 
@@ -261,11 +263,11 @@ export default function StockInputPage() {
           className="w-full"
           placeholder="Localização do estoque"
           onChange={(e) => handleChangeLocation(e)}
-          isDisabled={!!location}
+          isDisabled={!!location || user.stock_location}
           instanceId="location"
         />
         {location && (
-          <Button size={'sm'} onClick={() => setLocation(null)}>
+          <Button size={'sm'} onClick={() => setLocation(null)} disabled={user.userData.stock_location}>
             Desbloquear
           </Button>
         )}
@@ -274,7 +276,7 @@ export default function StockInputPage() {
       <form ref={formRef} onSubmit={createItem} className="m-auto">
 
         <h5 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white mt-8">
-          Inclusão de Estoque
+          Controle de Estoque
         </h5>
 
 

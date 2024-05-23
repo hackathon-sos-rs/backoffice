@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 
 const useLocalStorageState = (key: string, defaultValue: any) => {
    const [state, setState] = useState(() => {
-      const valueInLocalStorage = window.localStorage.getItem(key);
+      const valueInLocalStorage = localStorage.getItem(key);
       if (valueInLocalStorage) {
          return JSON.parse(valueInLocalStorage);
       }
@@ -11,9 +11,9 @@ const useLocalStorageState = (key: string, defaultValue: any) => {
    
    useEffect(() => {
       if (state == null || state == undefined) {
-         window.localStorage.removeItem(key);
+         localStorage.removeItem(key);
       } else {
-         window.localStorage.setItem(key, JSON.stringify(state));
+         localStorage.setItem(key, JSON.stringify(state));
       }
    }, [state]);
    

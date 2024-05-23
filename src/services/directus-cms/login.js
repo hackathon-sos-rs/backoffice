@@ -9,8 +9,12 @@ export async function login(token) {
       .with(rest({ cache: 'no-store' }));
 
    try {
-      const userData = await directus.request(readMe());
+      const userData = await directus.request(readMe({ fields: ["*.*"] }));
       localStorage.setItem('user', JSON.stringify({ token, userData }));
+      localStorage.setItem('location', JSON.stringify({
+         value: userData.stock_location.id,
+         label: userData.stock_location.name
+      }));
       return userData;
    } catch (err) {
       console.log(err);
