@@ -62,6 +62,20 @@ export default function PharmaStockPage() {
   const [validUntil, setValidUntil] = useState(new Date()) as any;
   const [loading, setLoading] = useState(false);
 
+  const [isVolumeEnabled, setIsVolumeEnabled] = useState(true);
+
+  useEffect(() => {
+    
+    if (
+      medicineForm &&
+      ['Comprimido', 'Cápsula', 'Drágea', 'Pílula', 'Supositório', 'pastilha'].includes(medicineForm.label)
+    ) {
+      setIsVolumeEnabled(false); 
+    } else {
+      setIsVolumeEnabled(true); 
+    }
+  }, [medicineForm]);
+
   useEffect(() => {
     const getMedicationManufacturer = async () => {
       const values = await CreateSelectOptions('medication_manufacturer', 'id', 'name') as any;
@@ -212,6 +226,8 @@ export default function PharmaStockPage() {
         volume: medicineVolume,
       }
     }
+  
+  
 
     const input: StockInput = {
       sku,
@@ -236,6 +252,8 @@ export default function PharmaStockPage() {
 
     setLoading(false);
   }
+
+
 
   return (
     <div className="w-2/4 m-auto">
@@ -387,12 +405,12 @@ export default function PharmaStockPage() {
                
 
                 
-
+                
                 <div className="my-6">
                   <div className="mb-2 block">
                     <Label htmlFor="medicineVolume" value="Volume:" />
                   </div>
-                  <TextInput id="medicineVolume" type="number" placeholder="Volume" required onChange={(e) => setMedicineVolume(+e.target.value)} />
+                  <TextInput id="medicineVolume" type="number" placeholder="Volume" required onChange={(e) => setMedicineVolume(+e.target.value)} disabled={!isVolumeEnabled} />
                 </div>
 
                 <div className="my-6">
@@ -404,6 +422,7 @@ export default function PharmaStockPage() {
                     placeholder="Selecione a classe"
                     instanceId="medicineTherapeuticClass"
                     onChange={(e) => setMedicineTherapeuticClass(e)}
+                    
                   />
                 </div>
 
@@ -425,7 +444,7 @@ export default function PharmaStockPage() {
               <div className="mb-2 block">
                 <Label htmlFor="batch" value="Lote:" />
               </div>
-              <TextInput id="batch" type="number" placeholder="Informe o Lote" required onChange={(e) => setBatch(e.target.value)} />
+              <TextInput id="batch" type="text" placeholder="Informe o Lote" required onChange={(e) => setBatch(e.target.value)} />
             </div>
             <div className="my-6">
               <div className="mb-2 block">
