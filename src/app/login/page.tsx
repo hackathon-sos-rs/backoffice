@@ -15,7 +15,7 @@ const Login: React.FC = () => {
   const handleLogin = async () => {
     try {
       const userData = await login(token);
-      router.push('/stock-input');
+      router.push('/');
     } catch (err) {
       setError('Token inválido');
     }

@@ -56,3 +56,51 @@
     transform: translateX(calc(-200px * 5));
   }
 }
+
+
+.main-menu {
+  display: flex;
+  justify-content: center;
+  gap: 1em;
+  padding: 1em;
+
+  a {
+    color: white;
+    text-decoration: none;
+    font-size: 1.5em;
+    font-weight: bold;
+    text-transform: uppercase;
+    padding: 0.5em 1em;
+    border-radius: 0.5em;
+    background-color: #006600;
+
+    &:hover {
+      background-color: #008800;
+    }
+  }
+}
+
+
+.pharma-stock {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.pharma-stock th,
+.pharma-stock td {
+  border-bottom: 1px solid black;
+  @apply p-2 text-left;
+  
+}
+
+.pharma-stock th {
+  background-color: #f5f5f5;
+}
+
+.pharma-stock tr:nth-child(even) {
+  background-color: silver;
+}
+
+.pharma-stock tr:last-child {
+  border-bottom: none;
+}
