@@ -238,8 +238,10 @@ export default function PharmaStockPage() {
   }
 
   return (
+
     <div className="w-2/4 m-auto">
 
+   
       <div className="fixed w-screen top-0 right-0 z-10">
         { error && (
           <div className="w-full p-4 bg-red-500 text-white">

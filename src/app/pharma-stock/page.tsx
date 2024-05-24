@@ -85,7 +85,7 @@ const PharmaStockPage = () => {
             <h1 className="flex-1">Estoque de farmacia</h1>
             <div className="flex-1 flex justify-end gap-5">
                <Link href={'/pharma-stock/input'} className="px-3 py-1 bg-green-500 text-white">Entrada de estoque</Link>
-               <Link href={'/pharma-stock/input'} className="px-3 py-1 bg-violet-500 text-white">Saida de estoque</Link>
+               <Link href={'/pharma-stock/out'} className="px-3 py-1 bg-violet-500 text-white">Saida de estoque</Link>
             </div>
          </div>
 
