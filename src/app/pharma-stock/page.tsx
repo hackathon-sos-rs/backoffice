@@ -108,12 +108,14 @@ const PharmaStockPage = () => {
             <tbody>
             {stock.map((item: any) => {
    
-                let qtd = 0;
+               //  let qtd  = 0;
     
-            
-               item.batchs.map((lote: any) => {
-                  qtd += lote.amount;
-               });
+                const qtd = Array.isArray(item.batchs)
+                ? item.batchs.reduce((sum, batch) => sum + batch.amount, 0)
+                : 0;
+               // item.batchs.map((lote: any) => {
+               //    qtd += lote.amount;
+               // });
            
 
             return (
