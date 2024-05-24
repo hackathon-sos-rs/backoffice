@@ -106,15 +106,26 @@ const PharmaStockPage = () => {
                </tr>
             </thead>
             <tbody>
-               {stock.map((item: any) => (
-                  <tr key={item.id}>
-                     <td>{item.sku.active_principle}</td>
-                     <td>{item.sku.concentration}{item.sku.concentration_unit}</td>
-                     <td>{item.sku.form.form}</td>
-                     <td>{item.sku.therapeutic_class.name}</td>
-                     <td>{item.amount}</td>
-                  </tr>
-               ))}
+            {stock.map((item: any) => {
+   
+                let qtd = 0;
+    
+            
+               item.batchs.map((lote: any) => {
+                  qtd += lote.amount;
+               });
+           
+
+            return (
+               <tr key={item.id}>
+               <td>{item.sku.active_principle}</td>
+               <td>{item.sku.concentration}{item.sku.concentration_unit}</td>
+               <td>{item.sku.form.form}</td>
+               <td>{item.sku.therapeutic_class.name}</td>
+               <td>{qtd}</td>
+               </tr>
+            );
+         })}
             </tbody>
          </table>
       </div>
