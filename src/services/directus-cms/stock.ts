@@ -114,11 +114,27 @@ export async function saveMedicineStock(stock: StockInput) {
          })
       );
       itemId = output.id;
+
+      await directus.request(
+         createItem('pharma_stock', {
+            sku: itemId,
+            batchs: {
+               batch: stock.batch,
+               amount: stock.quantity
+            },
+            valid_until: stock.validUntil,
+            manufacturer: stock.manufacturer,
+            location: stock.location,
+            inout: 'in'
+         })
+      );
    } else {
       itemId = stock.itemId
    }
 
    debugger;
+
+
 
    return directus.request(
       createItem('pharma_stock_events', {
