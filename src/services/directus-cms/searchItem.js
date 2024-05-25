@@ -3,7 +3,7 @@ import getItems from './getItems';
 async function searchItem(sku) {
   if (!sku.length) { return []; }
   const searchItemsReq = getItems({ searchField: 'ref_id', searchValue: sku, collection: 'item' });
-  const searchMedicinesReq = getItems({ searchField: 'sku', searchValue: sku, collection: 'medication' });
+  const searchMedicinesReq = getItems({ searchField: 'sku', searchValue: sku, collection: 'medication', fields: ["*","*.*"] });
 
   const [searchItems, searchMedicines] = await Promise.all([searchItemsReq, searchMedicinesReq]);
 

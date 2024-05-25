@@ -9,7 +9,7 @@ import searchItem from '@/services/directus-cms/searchItem';
 import useLocalStorageState from "@/hooks/useLocalStorageState";
 import { debounce } from "@/utils/input";
 import User from "@/components/User";
-import { StockInputType, StockInput, saveStock } from "@/services/directus-cms/stock";
+import { StockInputType, StockInput, saveStock, findStock, PharmStockModifier, bumpPharmStock } from "@/services/directus-cms/stock";
 import useFlash from "@/hooks/useFlash";
 import Link from "next/link";
 
@@ -53,6 +53,7 @@ export default function PharmaStockPage() {
   const [medicationManufacturer, setMedicationManufacturer] = useState() as any;
 
   const [currentProduct, setCurrentProduct] = useState() as any;
+  const [currentProductStock, setCurrentProductStock] = useState() as any;
   const [alreadySearched, setAlreadySearched] = useState(false);
 
   const [amount, setAmount] = useState(0);
@@ -63,18 +64,22 @@ export default function PharmaStockPage() {
   const [loading, setLoading] = useState(false);
 
   const [isVolumeEnabled, setIsVolumeEnabled] = useState(true);
+  const [amountBreakdown, setAmountBreakdown] = useState<Record<string, number>>({});
+  const [totalAmount, setTotalAmount] = useState(0);
 
   useEffect(() => {
-    
+
     if (
       medicineForm &&
       ['Comprimido', 'Cápsula', 'Drágea', 'Pílula', 'Supositório', 'pastilha'].includes(medicineForm.label)
     ) {
-      setIsVolumeEnabled(false); 
+      setIsVolumeEnabled(false);
     } else {
-      setIsVolumeEnabled(true); 
+      setIsVolumeEnabled(true);
     }
   }, [medicineForm]);
+
+
 
   useEffect(() => {
     const getMedicationManufacturer = async () => {
@@ -130,6 +135,19 @@ export default function PharmaStockPage() {
     getTherapeuticClassOptions();
   }, []);
 
+  useEffect(() => {
+    if (currentProduct) {
+      (async () => {
+        const stock = await findStock(currentProduct.id);
+        setCurrentProductStock(stock);
+      })();
+    }
+  }, [currentProduct])
+
+  useEffect(() => {
+    setTotalAmount(Object.values(amountBreakdown).reduce((acc, curr) => acc + curr, 0));
+  }, [amountBreakdown])
+
   const searchItemBySku = async (sku: string) => {
     const [item] = await searchItem(sku) as any;
     if (item) {
@@ -148,7 +166,14 @@ export default function PharmaStockPage() {
     setAlreadySearched(true)
   }
 
-  const handleSkuChange = (value: string) => setSku(value);
+  const pushAmount = (batch: string, amount: number) => {
+    setAmountBreakdown((prev: any) => {
+      return {
+        ...prev,
+        [batch]: amount
+      }
+    });
+  }
 
   useEffect(() => {
     if (sku.length) {
@@ -176,6 +201,8 @@ export default function PharmaStockPage() {
   const reset = () => {
     setSku((prev: any) => '');
     setItemType((prev: any) => '');
+    setCurrentProductStock((prev: any) => null);
+    setTotalAmount((prev: any) => 0);
     setHasDueDate((prev: any) => false);
     setBatch((prev: any) => '');
     setItemCategory((prev: any) => null);
@@ -196,56 +223,22 @@ export default function PharmaStockPage() {
     formRef.current?.querySelector('input')?.focus()
   }
 
-  const createItem = async (e: any) => {
+  const saveStock = async (e: any) => {
     e.preventDefault();
 
     setLoading(true);
 
-    const isMedicine = itemType === 'medicine';
-    const isGeneralItem = itemType === 'generalItem';
-    const isFresh = !currentProduct;
-
-    let generalItem = undefined;
-    let medicineItem = undefined;
-
-    if (isGeneralItem && isFresh) {
-      generalItem = {
-        name: itemName,
-        category: itemCategory.value,
-        unit: 'un',
-      }
-    }
-
-    if (isMedicine && isFresh) {
-      medicineItem = {
-        activePrinciple: principle,
-        concentration: concentration,
-        concentrationUnit: concentrationUnit.value,
-        form: medicineForm.value,
-        therapeuticClass: medicineTherapeuticClass.value,
-        volume: medicineVolume,
-      }
-    }
-  
-  
-
-    const input: StockInput = {
-      sku,
-      itemId: currentProduct?.id,
-      inputType: isMedicine ? StockInputType.MEDICINE : StockInputType.GENERAL,
+    const input: PharmStockModifier = {
+      medicationId: currentProduct.id,
       location: location.value,
-      validUntil,
-      quantity: amount,
-      batch: batch,
-      manufacturer: (medicationManufacturer && medicationManufacturer.value) || undefined,
-      medicine: medicineItem,
-      general: generalItem,
+      batchBreakdown: Object.entries(amountBreakdown).map(([batch, amount]) => ({ batch, amount })),
+      operation: 'out'
     }
 
     try {
-      const output = await saveStock(input);
-      reset()
-      setSuccess('Item salvo com sucesso');
+      const output = await bumpPharmStock(input);
+      reset();
+      setSuccess('Baixa de estoque realizada com sucesso!');
     } catch (err: any) {
       setError(err.message);
     }
@@ -253,20 +246,18 @@ export default function PharmaStockPage() {
     setLoading(false);
   }
 
-
-
   return (
     <div className="w-2/4 m-auto">
 
       <div className="fixed w-screen top-0 right-0 z-10">
-        { error && (
+        {error && (
           <div className="w-full p-4 bg-red-500 text-white">
-            <p>{ error }</p>
+            <p>{error}</p>
           </div>
         )}
-        { success && (
+        {success && (
           <div className="w-full p-4 bg-green-500 text-white">
-            <p> { success } </p>
+            <p> {success} </p>
           </div>
         )}
       </div>
@@ -274,7 +265,7 @@ export default function PharmaStockPage() {
       <div>
         <User />
       </div>
-      
+
       <div className="mb-2">
         <Link href={'/pharma-stock'} className="text-blue-500 underline ">Ver estoque</Link>
       </div>
@@ -296,18 +287,17 @@ export default function PharmaStockPage() {
         )}
       </div>
 
-      <form ref={formRef} onSubmit={createItem} className="m-auto">
+      <form ref={formRef} onSubmit={saveStock} className="m-auto">
 
         <h5 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white mt-8">
-          Controle de Estoque
+          Saída de Estoque
         </h5>
-
 
         <div className="my-6">
           <div className="mb-2 block">
-            <Label htmlFor="sku" value="Código do Item ou Medicamento:" />
+            <Label htmlFor="sku" value="Código do Medicamento:" />
           </div>
-          <TextInput id="sku" type="text" placeholder="Informe o Código do Item ou Medicamento" required onChange={(e) => _setSku(e.target.value)} />
+          <TextInput id="sku" type="text" placeholder="Informe o Código do Medicamento" required onChange={(e) => _setSku(e.target.value)} />
         </div>
 
         {currentProduct && (
@@ -315,177 +305,60 @@ export default function PharmaStockPage() {
             <div className="mb-2 block">
               <Label htmlFor="productName" value={`${currentProduct.active_principle ? 'Medicamento:' : 'Produto:'}`} />
             </div>
-            <TextInput id="productName" type="text" placeholder="Nome do Produto" value={currentProduct.name || currentProduct.active_principle} disabled />
+            <TextInput id="productName" type="text" placeholder="Nome do Produto" value={`${currentProduct.active_principle} ${currentProduct.concentration}${currentProduct.concentration_unit} - ${currentProduct.manufacturer.name}`} disabled />
           </div>
         )}
 
-        {(!currentProduct && alreadySearched) && (
+        {currentProductStock && currentProductStock.batchs && currentProductStock.batchs.length > 1 && (
           <>
-            <fieldset className="flex max-w-md flex-col gap-4">
-              <legend className="mb-4">Selecione o tipo do Item:</legend>
-              <div className="flex items-center gap-2">
-                <Radio id="generalItem" name="itemType" value="generalItem" onChange={(e) => setItemType('generalItem')} />
-                <Label htmlFor="generalItem">Item Geral</Label>
-              </div>
-              <div className="flex items-center gap-2">
-                <Radio id="medicine" name="itemType" value="medicine" onChange={(e) => setItemType('medicine')} />
-                <Label htmlFor="medicine">Medicamento</Label>
-              </div>
-            </fieldset>
-            {itemType === 'generalItem' && (
-              <>
-                <div className="my-6">
-                  <div className="mb-2 block">
-                    <Label htmlFor="itemName" value="Nome do Item:" />
-                  </div>
-                  <TextInput id="itemName" type="text" placeholder="Informe o nome do Item" required onChange={(e) => setItemName(e.target.value)} />
-                </div>
-
-                <div className="my-6">
-                  <div className="mb-2 block">
-                    <Label htmlFor="itemCategory" value="Categoria:" />
-                  </div>
-                  <Select
-                    options={itemCategoryOptions}
-                    placeholder="Selecione a categoria do Item"
-                    instanceId="itemCategory"
-                    onChange={(e) => setItemCategory(e)}
-                  />
-                </div>
-
-                <div className="my-6">
-                  <div className="mb-2 block">
-                    <Label htmlFor="itemMeasure" value="Unidade de Medida:" />
-                  </div>
-                  <Select options={measureOptions} placeholder="Selecione a unidade de Medida do Item" instanceId="itemMeasure" />
-                </div>
-              </>
-            )}
-
-            {itemType === 'medicine' && (
-              <>
-                <div className="my-6">
-                  <div className="mb-2 block">
-                    <Label htmlFor="principle" value="Princípio do Ativo:" />
-                  </div>
-                  <TextInput id="principle" type="text" placeholder="Informe o principio Ativo do Medicamento" required onChange={(e) => setPrinciple(e.target.value)} />
-                </div>
-
-                <div className="my-6">
-                  <div className="mb-2 block">
-                    <Label htmlFor="medicineForm" value="Forma Farmacêutica:" />
-                  </div>
-                  <Select
-                    options={medicineFormOptions}
-                    placeholder="Selecione a forma"
-                    instanceId="medicineForm"
-                    onChange={(e) => setMedicineForm(e)}
-                  />
-                </div>
-                
-                <div className="my-6">
-                  <div className="mb-2 block">
-                    <Label htmlFor="medicineConcentrationUnit" value="Unidade da Concentração:" />
-                  </div>
-                  <Select
-                    options={concentrationUnitOptions}
-                    placeholder="Selecione a unidade de concentração"
-                    instanceId="medicineConcentrationUnit"
-                    onChange={(e) => setConcentrationUnit(e)}
-                  />
-                </div>
-
-                <div className="my-6">
-                  <div className="mb-2 block">
-                    <Label htmlFor="medicineConcentration" value="Concentração:" />
-                  </div>
-                  <TextInput id="medicineConcentration" type="number" value={concentration} min={0} placeholder="Concentração" required onChange={(e) => setConcentration(e.target.value)} />
-                </div>
-
-               
-
-                
-                
-                <div className="my-6">
-                  <div className="mb-2 block">
-                    <Label htmlFor="medicineVolume" value="Volume:" />
-                  </div>
-                  <TextInput id="medicineVolume" type="number" placeholder="Volume" required onChange={(e) => setMedicineVolume(+e.target.value)} disabled={!isVolumeEnabled} />
-                </div>
-
-                <div className="my-6">
-                  <div className="mb-2 block">
-                    <Label htmlFor="medicineTherapeuticClass" value="Classe Terapêutica:" />
-                  </div>
-                  <Select
-                    options={medicineTherapeuticClassOptions}
-                    placeholder="Selecione a classe"
-                    instanceId="medicineTherapeuticClass"
-                    onChange={(e) => setMedicineTherapeuticClass(e)}
-                    
-                  />
-                </div>
-
-              </>
-            )}
-          </>
-        )}
-
-        <div className="my-6">
-          <div className="mb-2 block">
-            <Label htmlFor="amount" value="Quantidade:" />
-          </div>
-          <TextInput id="amount" type="number" placeholder="Informe a Quantidade do item" required onChange={(e) => setAmount(-1 * +e.target.value)} />
-        </div>
-
-        {(itemType === 'medicine') && (
-          <>
-            <div className="my-6">
-              <div className="mb-2 block">
-                <Label htmlFor="batch" value="Lote:" />
-              </div>
-              <TextInput id="batch" type="text" placeholder="Informe o Lote" required onChange={(e) => setBatch(e.target.value)} />
-            </div>
-            <div className="my-6">
-              <div className="mb-2 block">
-                <Label htmlFor="manufacture" value="Fabricante:" />
-              </div>
-              <Select
-                options={medicationManufacturerOptions}
-                placeholder="Selecione o fabricante"
-                instanceId="manufacture"
-                onChange={(e) => setMedicationManufacturer(e)}
-              />
+            <div className="my-6 flex gap-5">
+              {currentProductStock.batchs.filter((batch: any) => batch.amount > 0).map((batch: any, index: number) => (
+                <BatchInput batch={batch} key={index} onAmountChange={(amount) => pushAmount(batch.batch, amount)} />
+              ))}
             </div>
           </>
         )}
-
-
-        {!(itemType === 'medicine') && (
-          <>
-            <div className="flex items-center gap-2">
-              <Checkbox id="dueDate" onChange={(e) => setHasDueDate(e.target.checked)} checked={hasDueDate} />
-              <Label htmlFor="dueDate" className="flex">
-                Possui data de Vencimento
-              </Label>
-            </div>
-          </>
-        )}
-
-        {(hasDueDate || itemType === 'medicine') && (
-          <div className="my-6">
-            <div className="mb-2 block">
-              <Label htmlFor="expireDate" value="Validade:" />
-            </div>
-            <Datepicker language="pt-BR" labelTodayButton="Hoje" labelClearButton="Limpar" minDate={new Date()} onChange={(e) => setValidUntil(e.target.value)} />
-          </div>
-        )}
+        
+        <p>
+          Total de medicamentos: {totalAmount}
+        </p>
 
         <div className="my-8">
-          <Button color="success" type="submit">Salvar</Button>
+          <Button color="success" type="submit" disabled={totalAmount === 0}>Salvar</Button>
         </div>
       </form>
 
     </div>
   )
+}
+
+const BatchInput = ({ onAmountChange, batch }: { batch: { index: number, batch: string, amount: number, validUntil: string }, onAmountChange?: (amount: number) => void }) => {
+  const [amount, setAmount] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (amount && amount > batch.amount) {
+      setAmount(batch.amount);
+      return;
+    }
+    if (amount && amount < 0) {
+      setAmount(1);
+      return;
+    }
+    onAmountChange?.(amount || 0)
+  }, [amount])
+
+  return (
+    <div className="w-2/5" key={batch.index}>
+      <div className="mb-2 block">
+        <Label htmlFor="batch" value={`Lote ${batch.batch}`} />
+      </div>
+      <TextInput id={"batch" + batch.batch} value={amount} type="number" min={0} max={batch.amount} placeholder="Informe a quantidade" required={!!amount} onChange={(e) => setAmount(parseInt(e.target.value) || 0)} />
+      <small className=" text-sm italic ">Saldo: {batch.amount - amount} validade: {(batch.validUntil && formatDate(new Date(batch.validUntil))) || 'N/A'}</small>
+    </div>
+  )
+}
+
+
+function formatDate(date: Date) {
+  return `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()}`
 }

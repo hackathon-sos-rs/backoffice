@@ -130,6 +130,16 @@ export default function PharmaStockPage() {
     getTherapeuticClassOptions();
   }, []);
 
+  useEffect(() => {
+    if (currentProduct && currentProduct.active_principle && currentProduct.manufacturer) {
+      console.log(currentProduct.manufacturer);
+      setMedicationManufacturer({ 
+        value: currentProduct.manufacturer.id, 
+        label: currentProduct.manufacturer.name 
+      });
+    }
+  }, [currentProduct])
+
   const searchItemBySku = async (sku: string) => {
     const [item] = await searchItem(sku) as any;
     if (item) {
@@ -253,8 +263,6 @@ export default function PharmaStockPage() {
     setLoading(false);
   }
 
-
-
   return (
     <div className="w-2/4 m-auto">
 
@@ -305,9 +313,9 @@ export default function PharmaStockPage() {
 
         <div className="my-6">
           <div className="mb-2 block">
-            <Label htmlFor="sku" value="Código do Item ou Medicamento:" />
+            <Label htmlFor="sku" value="Código do Medicamento:" />
           </div>
-          <TextInput id="sku" type="text" placeholder="Informe o Código do Item ou Medicamento" required onChange={(e) => _setSku(e.target.value)} />
+          <TextInput id="sku" type="text" placeholder="Informe o Código Medicamento" required onChange={(e) => _setSku(e.target.value)} />
         </div>
 
         {currentProduct && (
@@ -402,10 +410,6 @@ export default function PharmaStockPage() {
                   <TextInput id="medicineConcentration" type="number" value={concentration} min={0} placeholder="Concentração" required onChange={(e) => setConcentration(e.target.value)} />
                 </div>
 
-               
-
-                
-                
                 <div className="my-6">
                   <div className="mb-2 block">
                     <Label htmlFor="medicineVolume" value="Volume:" />
@@ -422,7 +426,6 @@ export default function PharmaStockPage() {
                     placeholder="Selecione a classe"
                     instanceId="medicineTherapeuticClass"
                     onChange={(e) => setMedicineTherapeuticClass(e)}
-                    
                   />
                 </div>
 
@@ -454,6 +457,8 @@ export default function PharmaStockPage() {
                 options={medicationManufacturerOptions}
                 placeholder="Selecione o fabricante"
                 instanceId="manufacture"
+                isDisabled={currentProduct && currentProduct.active_principle && currentProduct.manufacturer}
+                value={medicationManufacturer}
                 onChange={(e) => setMedicationManufacturer(e)}
               />
             </div>

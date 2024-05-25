@@ -1,5 +1,6 @@
-import { createItem } from '@directus/sdk';
+import { createItem, updateItem } from '@directus/sdk';
 import directus from './directus';
+import getItems from './getItems';
 
 /**
  * Represents the category of a stock item.
@@ -34,6 +35,16 @@ export type StockInput = {
       concentration: number;
       concentrationUnit: string;
    }
+}
+
+export type PharmStockModifier = {
+   medicationId: number;
+   location: number;
+   batchBreakdown: { 
+      batch: string, 
+      amount: number 
+   }[],
+   operation: 'in' | 'out'
 }
 
 /**
@@ -97,9 +108,8 @@ export async function saveMedicineStock(stock: StockInput) {
       throw new Error('Medicine stock must have a batch');
    }
 
-   debugger;
-
    let itemId = null;
+   let fresh = false;
 
    if (stock.medicine) {
       const output = await directus.request(
@@ -109,42 +119,133 @@ export async function saveMedicineStock(stock: StockInput) {
             volume: stock.medicine.volume,
             therapeutic_class: stock.medicine.therapeuticClass,
             active_principle: stock.medicine.activePrinciple,
+            manufacturer: stock.manufacturer,
             concentration: stock.medicine.concentration,
             concentration_unit: stock.medicine.concentrationUnit,
          })
       );
       itemId = output.id;
-
-      await directus.request(
-         createItem('pharma_stock', {
-            sku: itemId,
-            batchs: {
-               batch: stock.batch,
-               amount: stock.quantity
-            },
-            valid_until: stock.validUntil,
-            manufacturer: stock.manufacturer,
-            location: stock.location,
-            inout: 'in'
-         })
-      );
+      fresh = true;
    } else {
       itemId = stock.itemId
    }
 
-   debugger;
-
-
-
-   return directus.request(
+   let eventResult = await directus.request(
       createItem('pharma_stock_events', {
          sku: itemId,
          batch: stock.batch,
          amount: stock.quantity,
          valid_until: stock.validUntil,
-         manufacturer: stock.manufacturer,
          location: stock.location,
          inout: 'in'
       })
    );
+
+   if (fresh) {
+      await directus.request(createItem('pharma_stock', {
+         sku: itemId,
+         batchs: [{
+            batch: stock.batch,
+            amount: stock.quantity,
+            validUntil: stock.validUntil
+         }],
+         amount: stock.quantity,
+         valid_until: stock.validUntil,
+         manufacturer: stock.manufacturer,
+         location: stock.location,
+         inout: 'in'
+      }))
+   } else {
+      let remoteStock = await findStock(itemId);
+      if (remoteStock) {
+         remoteStock.batchs = updateOrCreate(remoteStock.batchs, {
+            batch: stock.batch,
+            amount: stock.quantity,
+            validUntil: stock.validUntil
+         }, (element, newElement) => {
+            element.amount += newElement.amount;
+            return element;
+         });
+         await directus.request(updateItem('pharma_stock', remoteStock.id, {
+            ...remoteStock,
+         }));
+      }
+   }
+
+   return eventResult;
+}
+
+export async function bumpPharmStock(stock: PharmStockModifier) {
+
+   let result = null;
+   const resultBag = [];
+
+   const eventPromises = stock.batchBreakdown.filter(batch => batch.amount > 0).map((batch) => {
+      return directus.request(
+         createItem('pharma_stock_events', {
+            sku: stock.medicationId,
+            batch: batch.batch,
+            amount: batch.amount,
+            location: stock.location,
+            inout: 'out'
+         })
+      );
+   });
+
+   result = await Promise.all(eventPromises);
+   resultBag.push(result);
+
+   let remoteStock = await findStock(stock.medicationId);
+   if (remoteStock) {
+      for (let i = 0; i < stock.batchBreakdown.length; i++) {
+         let batch = stock.batchBreakdown[i];
+         remoteStock.batchs = updateOrCreate(remoteStock.batchs, {
+            batch: batch.batch,
+            amount: batch.amount,
+            validUntil: remoteStock.valid_until
+         }, (element, newElement) => {
+            if(stock.operation === 'out') {
+               element.amount = element.amount - newElement.amount;
+            } else {
+               element.amount = element.amount + newElement.amount;
+            }
+            return element;
+         });
+      }
+      result = await directus.request(updateItem('pharma_stock', remoteStock.id, {
+         ...remoteStock,
+      }));
+      resultBag.push(result);
+   }
+   return resultBag;
+}
+
+export async function findStock(itemId: number) {
+   try {
+      const items = await getItems({
+         collection: 'pharma_stock',
+         fields: ["*", "*.*"],
+         filterRules: {
+            sku: { _eq: itemId }
+         }
+      })
+      return items.length && items[0];
+   } catch (err) {
+      return null;
+   }
+}
+
+function updateOrCreate(elements: any[], newElement: any, callback: (element: any, newElement: any) => any) {
+   let updated = false;
+   for (let i = 0; i < elements.length; i++) {
+       if (elements[i].batch === newElement.batch) {
+           elements[i] = callback(elements[i], newElement);
+           updated = true;
+           break;
+       }
+   }
+   if (!updated) {
+       elements.push(newElement);
+   }
+   return elements;
 }
