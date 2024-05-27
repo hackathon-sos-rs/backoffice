@@ -18,10 +18,10 @@ const Home = () => {
 
   return <>
     <div className="main-menu">
-      <Link href="/pharma-stock">
+      <Link href="/dashboard/pharma-stock">
         Controle de Estoque de Farmacia
       </Link>
-      <Link href="/stock-input">
+      <Link href="/dashboard/stock-input">
         Controle de Estoque Geral
       </Link>
     </div>

@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Datepicker, Checkbox, Label, Radio, TextInput, Button } from "flowbite-react";
 import Select from 'react-select'
-import { CreateSelectOptions } from "../../../utils/createSelectOptions";
+import { CreateSelectOptions } from "@/utils/createSelectOptions";
 import getFields from '@/services/directus-cms/getFields';
 import searchItem from '@/services/directus-cms/searchItem';
 import useLocalStorageState from "@/hooks/useLocalStorageState";
@@ -12,6 +12,7 @@ import User from "@/components/User";
 import { StockInputType, StockInput, saveStock } from "@/services/directus-cms/stock";
 import useFlash from "@/hooks/useFlash";
 import Link from "next/link";
+import ShellPage from "@/components/ShellPage";
 
 
 export default function PharmaStockPage() {
@@ -24,7 +25,7 @@ export default function PharmaStockPage() {
 
   const formRef = useRef<HTMLFormElement>(null)
 
-  const [user, setUser] = useLocalStorageState('user', null);
+  const [user, setUser] = useLocalStorageState<any>('user', null);
 
   const [error, setError] = useFlash(null, 1000);
   const [success, setSuccess] = useFlash(null, 1000);
@@ -158,8 +159,6 @@ export default function PharmaStockPage() {
     setAlreadySearched(true)
   }
 
-  const handleSkuChange = (value: string) => setSku(value);
-
   useEffect(() => {
     if (sku.length) {
       searchItemBySku(sku);
@@ -237,8 +236,6 @@ export default function PharmaStockPage() {
       }
     }
   
-  
-
     const input: StockInput = {
       sku,
       itemId: currentProduct?.id,
@@ -264,7 +261,7 @@ export default function PharmaStockPage() {
   }
 
   return (
-    <div className="w-2/4 m-auto">
+    <ShellPage title="Entrada de Estoque Médico">
 
       <div className="fixed w-screen top-0 right-0 z-10">
         { error && (
@@ -279,19 +276,12 @@ export default function PharmaStockPage() {
         )}
       </div>
 
-      <div>
-        <User />
-      </div>
-      
-      <div className="mb-2">
-        <Link href={'/pharma-stock'} className="text-blue-500 underline ">Ver estoque</Link>
-      </div>
-
-      <div className="flex flex-row gap-4">
+      <div className="flex flex-col lg:flex-row gap-5 items-center">
+        <div>Local do estoque:</div>
         <Select
           options={locationOptions}
           value={location}
-          className="w-full"
+          className="flex-1"
           placeholder="Localização do estoque"
           onChange={(e) => handleChangeLocation(e)}
           isDisabled={!!location || user.stock_location}
@@ -306,11 +296,6 @@ export default function PharmaStockPage() {
 
       <form ref={formRef} onSubmit={createItem} className="m-auto">
 
-        <h5 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white mt-8">
-          Controle de Estoque
-        </h5>
-
-
         <div className="my-6">
           <div className="mb-2 block">
             <Label htmlFor="sku" value="Código do Medicamento:" />
@@ -323,7 +308,7 @@ export default function PharmaStockPage() {
             <div className="mb-2 block">
               <Label htmlFor="productName" value={`${currentProduct.active_principle ? 'Medicamento:' : 'Produto:'}`} />
             </div>
-            <TextInput id="productName" type="text" placeholder="Nome do Produto" value={currentProduct.name || currentProduct.active_principle} disabled />
+            <TextInput id="productName" type="text" placeholder="Nome do Produto" value={`${currentProduct.active_principle} ${currentProduct.concentration}${currentProduct.concentration_unit}`} disabled />
           </div>
         )}
 
@@ -486,11 +471,13 @@ export default function PharmaStockPage() {
           </div>
         )}
 
-        <div className="my-8">
+        <div className="my-8 flex items-center gap-5">
           <Button color="success" type="submit">Salvar</Button>
+          <span>ou</span>
+          <Button color="warning" type="submit">Limpar</Button>
         </div>
       </form>
 
-    </div>
+      </ShellPage>
   )
 }

@@ -79,28 +79,3 @@
     }
   }
 }
-
-
-.pharma-stock {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.pharma-stock th,
-.pharma-stock td {
-  border-bottom: 1px solid black;
-  @apply p-2 text-left;
-  
-}
-
-.pharma-stock th {
-  background-color: #f5f5f5;
-}
-
-.pharma-stock tr:nth-child(even) {
-  background-color: silver;
-}
-
-.pharma-stock tr:last-child {
-  border-bottom: none;
-}

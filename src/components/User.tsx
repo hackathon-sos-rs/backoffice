@@ -1,11 +1,14 @@
+'use client';
+
 import useLocalStorageState from "@/hooks/useLocalStorageState";
 import { useRouter } from 'next/navigation';
 import { useEffect } from "react";
 
 const User = () => {
-   const [user, setUser] = useLocalStorageState('user', null);
-   const [location, setLocation] = useLocalStorageState('location', null);
+   const [user, setUser] = useLocalStorageState<any>('user', null);
+   const [location, setLocation] = useLocalStorageState<any>('location', null);
    const router = useRouter();
+   
    useEffect(() => {
       if (!user) {
          setUser(null);
@@ -16,7 +19,7 @@ const User = () => {
 
    return (<>
       {  user && user.userData &&
-         <div className="border rounded p-4 mb-5 flex flex-row gap-5">
+         <div className="bg-gray-100 p-4 mb-5 flex flex-row gap-5 border-b justify-center">
             <span>{user.userData.first_name} {user.userData.last_name}</span>
             {user.userData.identifiers && user.userData.identifiers.map((identifier: any, index: number) =>
                <span key={index}>

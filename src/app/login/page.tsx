@@ -7,7 +7,7 @@ import useLocalStorageState from '@/hooks/useLocalStorageState';
 import Image from 'next/image';
 
 const Login: React.FC = () => {
-  const [user, setUser] = useLocalStorageState('user', null);
+  const [user, setUser] = useLocalStorageState<any>('user', null);
   const [token, setToken] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
@@ -15,7 +15,7 @@ const Login: React.FC = () => {
   const handleLogin = async () => {
     try {
       const userData = await login(token);
-      router.push('/');
+      router.push('/dashboard');
     } catch (err) {
       setError('Token inválido');
     }
@@ -25,7 +25,7 @@ const Login: React.FC = () => {
     if (user && user.token) {
       (async () => {
         const userData = await login(user.token);
-        router.push('/stock-input');
+        router.push('/dashboard');
       })();
     }
   }, [user]);

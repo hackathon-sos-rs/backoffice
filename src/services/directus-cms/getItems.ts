@@ -16,7 +16,7 @@ async function getItems({ searchField, searchValue, fields = ["*"], collection, 
 
   return directus.request(readItems(collection, {
     filter,
-    fields: fields,
+    fields: fields
   }));
 }
 
