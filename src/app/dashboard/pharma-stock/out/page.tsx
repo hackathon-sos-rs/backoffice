@@ -226,6 +226,7 @@ export default function PharmaStockPage() {
     setPrinciple((prev: any) => '');
     setMedicineVolume((prev: any) => 0);
     setValidUntil((prev: any) => new Date());
+    setOutputItems((prev: any) => ({}));
 
     formRef.current?.reset();
     formRef.current?.querySelector('input')?.focus()
@@ -236,20 +237,25 @@ export default function PharmaStockPage() {
 
     setLoading(true);
 
-    const input: PharmStockModifier = {
-      medicationId: currentProduct.id,
-      location: location.value,
-      batchBreakdown: Object.entries(amountBreakdown).map(([batch, amount]) => ({ batch, amount })),
-      operation: 'out'
-    }
+    Object.keys(outputItems).forEach(async (key) => {
+      const item = outputItems[key];
+      const { itemStock, modifier } = item;
 
-    try {
-      const output = await bumpPharmStock(input);
-      reset();
-      setSuccess('Baixa de estoque realizada com sucesso!');
-    } catch (err: any) {
-      setError(err.message);
-    }
+      const input: PharmStockModifier = {
+        medicationId: item.medication.id,
+        location: location.value,
+        batchBreakdown: Object.entries(amountBreakdown[key]).map(([batch, amount]) => ({ batch, amount })),
+        operation: 'out'
+      }
+
+      try {
+        const output = await bumpPharmStock(input);
+        reset();
+        setSuccess('Baixa de estoque realizada com sucesso!');
+      } catch (err: any) {
+        setError(err.message);
+      }
+    })
 
     setLoading(false);
   }
@@ -294,7 +300,7 @@ export default function PharmaStockPage() {
             <div className="mb-2 block">
               <Label htmlFor="sku" value="Código de barras:" />
             </div>
-            <TextInput id="sku" type="text" placeholder="Informe o Código de barras" required onChange={(e) => _setSku(e.target.value)} />
+            <TextInput id="sku" type="text" placeholder="Informe o Código de barras" required={!!outputItems.length} onChange={(e) => _setSku(e.target.value)} />
           </div>
           <div className="my-6 flex-1">
             <div className="mb-2 block">

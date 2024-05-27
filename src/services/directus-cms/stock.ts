@@ -183,7 +183,7 @@ export async function bumpPharmStock(stock: PharmStockModifier) {
 
    result = await Promise.all(eventPromises);
    resultBag.push(result);
-
+   debugger;
    let remoteStock = await findStock(stock.medicationId);
    if (remoteStock) {
       for (let i = 0; i < stock.batchBreakdown.length; i++) {
