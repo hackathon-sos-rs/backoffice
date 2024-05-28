@@ -114,9 +114,7 @@ export default function PharmaStockPage() {
   }, []);
 
     const getOptionByValue = (choices: any[], valueToFind: any) =>{
-      console.log(valueToFind);
       const choice = choices.find(choice => choice.value === valueToFind);
-      console.log(choice);
       if (choice) {
         return choice;
       }
@@ -314,7 +312,7 @@ export default function PharmaStockPage() {
           </div>
           <TextInput id="sku" type="text" placeholder="Informe o Código Medicamento" required onChange={(e) => _setSku(e.target.value)} />
         </div>
-        {console.log(currentProduct)}
+        
 
         {currentProduct && (
           <>
@@ -323,61 +321,66 @@ export default function PharmaStockPage() {
                 <Label htmlFor="productName" value={`${currentProduct.active_principle ? 'Medicamento:' : 'Produto:'}`} />
               </div>
               <TextInput id="productName" type="text" placeholder="Nome do Produto" value={`${currentProduct.active_principle}`} disabled />
-            </div>
-              <div className="my-6">
-              <div className="mb-2 block">
-              <Label htmlFor="medicineForm" value="Forma Farmacêutica:" />
               </div>
-                
-                <Select
-                  options={medicineFormOptions}
-                  placeholder="Selecione a forma"
-                  instanceId="medicineForm"
-                  defaultValue={{ value: currentProduct.form.id, label: currentProduct.form.form} }
-                  isDisabled={currentProduct}
-                />
-              </div>
-            
-            <div className="my-6">
-              <div className="mb-2 block">
-                <Label htmlFor="medicineConcentrationUnit" value="Unidade da Concentração:" />
-              </div>
-              <Select
-                options={concentrationUnitOptions}
-                placeholder="Selecione a unidade de concentração"
-                instanceId="medicineConcentrationUnit"
-                defaultValue={getOptionByValue(concentrationUnitOptions,currentProduct.concentration_unit)}
-                isDisabled={currentProduct}
-              />
-            </div>
+             {currentProduct.active_principle && (
+                <>
+                  
+                    <div className="my-6">
+                    <div className="mb-2 block">
+                    <Label htmlFor="medicineForm" value="Forma Farmacêutica:" />
+                    </div>
+                      
+                      <Select
+                        options={medicineFormOptions}
+                        placeholder="Selecione a forma"
+                        instanceId="medicineForm"
+                        defaultValue={{ value: currentProduct.form.id, label: currentProduct.form.form} }
+                        isDisabled={currentProduct}
+                      />
+                    </div>
+                  
+                  <div className="my-6">
+                    <div className="mb-2 block">
+                      <Label htmlFor="medicineConcentrationUnit" value="Unidade da Concentração:" />
+                    </div>
+                    <Select
+                      options={concentrationUnitOptions}
+                      placeholder="Selecione a unidade de concentração"
+                      instanceId="medicineConcentrationUnit"
+                      defaultValue={getOptionByValue(concentrationUnitOptions,currentProduct.concentration_unit)}
+                      isDisabled={currentProduct}
+                    />
+                  </div>
 
-            <div className="my-6">
-              <div className="mb-2 block">
-                <Label htmlFor="medicineConcentration" value="Concentração:" />
-              </div>
-              <TextInput id="medicineConcentration" type="number" value={`${currentProduct.concentration}`} min={0} placeholder="Concentração" disabled />
-            </div>
+                  <div className="my-6">
+                    <div className="mb-2 block">
+                      <Label htmlFor="medicineConcentration" value="Concentração:" />
+                    </div>
+                    <TextInput id="medicineConcentration" type="number" value={`${currentProduct.concentration}`} min={0} placeholder="Concentração" disabled />
+                  </div>
 
-            <div className="my-6">
-              <div className="mb-2 block">
-                <Label htmlFor="medicineVolume" value="Volume:" />
-              </div>
-              <TextInput id="medicineVolume" type="number" placeholder="Volume" required defaultValue={`${currentProduct.volume}`} disabled />
-            </div>
+                  <div className="my-6">
+                    <div className="mb-2 block">
+                      <Label htmlFor="medicineVolume" value="Volume:" />
+                    </div>
+                    <TextInput id="medicineVolume" type="number" placeholder="Volume" required defaultValue={`${currentProduct.volume}`} disabled />
+                  </div>
 
-            <div className="my-6">
-              <div className="mb-2 block">
-                <Label htmlFor="medicineTherapeuticClass" value="Classe Terapêutica:" />
-              </div>
-              <Select
-                options={medicineTherapeuticClassOptions}
-                placeholder="Selecione a classe"
-                instanceId="medicineTherapeuticClass"
-                defaultValue={{ value: currentProduct.therapeutic_class.id, label: currentProduct.therapeutic_class.name} }
-                isDisabled={currentProduct}
-              />
-            </div>
-
+                  <div className="my-6">
+                    <div className="mb-2 block">
+                      <Label htmlFor="medicineTherapeuticClass" value="Classe Terapêutica:" />
+                    </div>
+                    <Select
+                      options={medicineTherapeuticClassOptions}
+                      placeholder="Selecione a classe"
+                      instanceId="medicineTherapeuticClass"
+                      defaultValue={{ value: currentProduct.therapeutic_class.id, label: currentProduct.therapeutic_class.name} }
+                      isDisabled={currentProduct}
+                    />
+                    
+                  </div>
+              </>)}
+              
         </>
         )}
 
