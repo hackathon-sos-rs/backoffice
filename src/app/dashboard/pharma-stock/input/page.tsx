@@ -235,14 +235,15 @@ export default function PharmaStockPage() {
       }
     }
 
-    if (isMedicine && isFresh) {
+    if (isMedicine) {
       medicineItem = {
-        activePrinciple: principle,
-        concentration: concentration,
-        concentrationUnit: concentrationUnit.value,
-        form: medicineForm.value,
-        therapeuticClass: medicineTherapeuticClass.value,
-        volume: medicineVolume,
+        isFresh,
+        activePrinciple: currentProduct.active_principal || principle,
+        concentration: currentProduct.concentration || concentration,
+        concentrationUnit: currentProduct.concentration_unit || concentrationUnit.value,
+        form: currentProduct.form || medicineForm.value,
+        therapeuticClass: currentProduct.therapeutic_class || medicineTherapeuticClass.value,
+        volume: currentProduct.volume || medicineVolume,
       }
     }
   
@@ -334,8 +335,9 @@ export default function PharmaStockPage() {
                         options={medicineFormOptions}
                         placeholder="Selecione a forma"
                         instanceId="medicineForm"
-                        defaultValue={{ value: currentProduct.form.id, label: currentProduct.form.form} }
-                        isDisabled={currentProduct}
+                        onChange={(e) => setMedicineForm(e)}
+                        defaultValue={currentProduct.form && { value: currentProduct.form.id, label: currentProduct.form.form} }
+                        isDisabled={currentProduct.form}
                       />
                     </div>
                   
@@ -374,8 +376,9 @@ export default function PharmaStockPage() {
                       options={medicineTherapeuticClassOptions}
                       placeholder="Selecione a classe"
                       instanceId="medicineTherapeuticClass"
-                      defaultValue={{ value: currentProduct.therapeutic_class.id, label: currentProduct.therapeutic_class.name} }
-                      isDisabled={currentProduct}
+                      onChange={(e) => setMedicineTherapeuticClass(e)}
+                      defaultValue={currentProduct.therapeutic_class && { value: currentProduct.therapeutic_class.id, label: currentProduct.therapeutic_class.name} }
+                      isDisabled={currentProduct.therapeutic_class}
                     />
                     
                   </div>

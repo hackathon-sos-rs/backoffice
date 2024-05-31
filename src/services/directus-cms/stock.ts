@@ -28,6 +28,7 @@ export type StockInput = {
       unit: string;
    },
    medicine?: {
+      isFresh: boolean;
       activePrinciple: string;
       form: number;
       volume: number;
@@ -112,19 +113,29 @@ export async function saveMedicineStock(stock: StockInput) {
    let freshStock = false;
 
    if (stock.medicine) {
-      const output = await directus.request(
-         createItem('medication', {
-            sku: stock.sku,
-            form: stock.medicine.form,
-            volume: stock.medicine.volume,
-            therapeutic_class: stock.medicine.therapeuticClass,
-            active_principle: stock.medicine.activePrinciple,
-            manufacturer: stock.manufacturer,
-            concentration: stock.medicine.concentration,
-            concentration_unit: stock.medicine.concentrationUnit,
-         })
-      );
-      itemId = output.id;
+      if (stock.medicine.isFresh) {
+         const output = await directus.request(
+            createItem('medication', {
+               sku: stock.sku,
+               form: stock.medicine.form,
+               volume: stock.medicine.volume,
+               therapeutic_class: stock.medicine.therapeuticClass,
+               active_principle: stock.medicine.activePrinciple,
+               manufacturer: stock.manufacturer,
+               concentration: stock.medicine.concentration,
+               concentration_unit: stock.medicine.concentrationUnit,
+            })
+         );
+         itemId = output.id;
+      } else if(stock.itemId) {
+         const output = await directus.request(
+            updateItem('medication', stock.itemId, {
+               form: stock.medicine.form,
+               therapeutic_class: stock.medicine.therapeuticClass,
+            })
+         );
+         itemId = output.id;
+      }
    } else {
       itemId = stock.itemId
    }

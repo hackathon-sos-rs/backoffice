@@ -36,39 +36,16 @@ export default function PharmaStockPage() {
   const [location, setLocation] = useLocalStorageState('location', {}) as any;
   const [locationOptions, setLocationOptions] = useState();
 
-  const [itemCategoryOptions, setItemCategoryOptions] = useState();
-  const [itemCategory, setItemCategory] = useState() as any;
-
-  const [concentrationUnitOptions, setConcentrationUnitOptions] = useState() as any;
-  const [concentrationUnit, setConcentrationUnit] = useState() as any;
-  const [concentration, setConcentration] = useState<number>(0) as any;
-
-  const [medicineFormOptions, setMedicineFormOptions] = useState() as any;
   const [medicineForm, setMedicineForm] = useState() as any;
-
-  const [medicineTherapeuticClassOptions, setMedicineTherapeuticClassOptions] = useState() as any;
-  const [medicineTherapeuticClass, setMedicineTherapeuticClass] = useState() as any;
-
-  const [medicationManufacturerOptions, setMedicationManufacturerOptions] = useState() as any;
-  const [medicationManufacturer, setMedicationManufacturer] = useState() as any;
 
   const [currentProduct, setCurrentProduct] = useState() as any;
   const [currentProductStock, setCurrentProductStock] = useState() as any;
-  const [alreadySearched, setAlreadySearched] = useState(false);
-
-  const [amount, setAmount] = useState(0);
-  const [itemName, setItemName] = useState('');
-  const [principle, setPrinciple] = useState('');
-  const [medicineVolume, setMedicineVolume] = useState(0);
-  const [validUntil, setValidUntil] = useState(new Date()) as any;
-  const [loading, setLoading] = useState(false);
 
   const [isVolumeEnabled, setIsVolumeEnabled] = useState(true);
   const [amountBreakdown, setAmountBreakdown] = useState<Record<string, Record<string, number>>>({});
   const [totalAmount, setTotalAmount] = useState(0);
 
   useEffect(() => {
-
     if (
       medicineForm &&
       ['Comprimido', 'Cápsula', 'Drágea', 'Pílula', 'Supositório', 'pastilha'].includes(medicineForm.label)
@@ -79,17 +56,6 @@ export default function PharmaStockPage() {
     }
   }, [medicineForm]);
 
-
-
-  useEffect(() => {
-    const getMedicationManufacturer = async () => {
-      const values = await CreateSelectOptions('medication_manufacturer', 'id', 'name') as any;
-      setMedicationManufacturerOptions(values);
-    }
-
-    getMedicationManufacturer();
-  }, []);
-
   useEffect(() => {
     const getLocationsItems = async () => {
       const locations = await CreateSelectOptions('stock_location', 'id', 'name') as any;
@@ -97,42 +63,6 @@ export default function PharmaStockPage() {
     }
 
     getLocationsItems();
-  }, []);
-
-  useEffect(() => {
-    const getItemCategoryOptions = async () => {
-      const categories = await CreateSelectOptions('category', 'id', 'name') as any;
-      setItemCategoryOptions(categories);
-    }
-
-    getItemCategoryOptions();
-  }, []);
-
-  useEffect(() => {
-    const getConcentrationUnitOptions = async () => {
-      const concentrationUnits = await getFields({ fieldName: 'concentration_unit', collection: 'medication' });
-      setConcentrationUnitOptions(concentrationUnits.choices.map((choice: any) => ({ value: choice.value, label: choice.text })));
-    }
-
-    getConcentrationUnitOptions();
-  }, []);
-
-  useEffect(() => {
-    const getMedicineFormOptions = async () => {
-      const formOptions = await CreateSelectOptions('pharma_form', 'id', 'form') as any;
-      setMedicineFormOptions(formOptions);
-    }
-
-    getMedicineFormOptions();
-  }, []);
-
-  useEffect(() => {
-    const getTherapeuticClassOptions = async () => {
-      const therapeuticClasses = await CreateSelectOptions('pharma_therapeutic_classes', 'id', 'name') as any;
-      setMedicineTherapeuticClassOptions(therapeuticClasses);
-    }
-
-    getTherapeuticClassOptions();
   }, []);
 
   useEffect(() => {
@@ -145,7 +75,7 @@ export default function PharmaStockPage() {
   }, [currentProduct])
 
   useEffect(() => {
-    setTotalAmount(Object.values(amountBreakdown).reduce((acc: number, curr: Record<string, number>) => acc + Object.values(curr).reduce((a,b) => a + b, 0), 0));
+    setTotalAmount(Object.values(amountBreakdown).reduce((acc: number, curr: Record<string, number>) => acc + Object.values(curr).reduce((a, b) => a + b, 0), 0));
   }, [amountBreakdown])
 
   const searchItemBySku = async (sku: string) => {
@@ -155,17 +85,6 @@ export default function PharmaStockPage() {
     } else {
       setCurrentProduct()
     }
-
-    setAlreadySearched(true)
-  }
-
-  const pushAmount = (batch: string, amount: number) => {
-    setAmountBreakdown((prev: any) => {
-      return {
-        ...prev,
-        [batch]: amount
-      }
-    });
   }
 
   const addOutputItem = () => {
@@ -181,7 +100,6 @@ export default function PharmaStockPage() {
       setSku('');
       setCurrentProduct(null);
       setCurrentProductStock(null);
-      setAlreadySearched(false);
       formRef.current?.reset();
     }, 100);
   }
@@ -190,8 +108,7 @@ export default function PharmaStockPage() {
     if (sku.length) {
       searchItemBySku(sku);
     } else {
-      setCurrentProduct()
-      setAlreadySearched(false)
+      setCurrentProduct();
     }
   }, [sku]);
 
@@ -213,29 +130,15 @@ export default function PharmaStockPage() {
     setSku((prev: any) => '');
     setCurrentProductStock((prev: any) => null);
     setTotalAmount((prev: any) => 0);
-    setItemCategory((prev: any) => null);
-    setConcentrationUnit((prev: any) => null);
-    setConcentration((prev: any) => 0);
     setMedicineForm((prev: any) => null);
-    setMedicineTherapeuticClass((prev: any) => null);
-    setMedicationManufacturer((prev: any) => null);
     setCurrentProduct((prev: any) => null);
-    setAlreadySearched((prev: any) => false);
-    setAmount((prev: any) => 0);
-    setItemName((prev: any) => '');
-    setPrinciple((prev: any) => '');
-    setMedicineVolume((prev: any) => 0);
-    setValidUntil((prev: any) => new Date());
     setOutputItems((prev: any) => ({}));
-
     formRef.current?.reset();
     formRef.current?.querySelector('input')?.focus()
   }
 
   const saveStock = async (e: any) => {
     e.preventDefault();
-
-    setLoading(true);
 
     Object.keys(outputItems).forEach(async (key) => {
       const item = outputItems[key];
@@ -256,8 +159,6 @@ export default function PharmaStockPage() {
         setError(err.message);
       }
     })
-
-    setLoading(false);
   }
 
   return (
@@ -316,7 +217,7 @@ export default function PharmaStockPage() {
         </div>
 
         {Object.keys(outputItems).map(key => (
-          <MedicationStockSetup key={key} itemKey={key} outputItem={outputItems[key]} onAmountChange={(itemKey: string, batch: string, amount: number) => { 
+          <MedicationStockSetup key={key} itemKey={key} outputItem={outputItems[key]} onAmountChange={(itemKey: string, batch: string, amount: number) => {
             setAmountBreakdown((prev: any) => {
               return {
                 ...prev,
@@ -359,8 +260,8 @@ const MedicationStockSetup = ({ outputItem, onAmountChange, itemKey, onRemove }:
     {outputItem.itemStock && outputItem.itemStock.batchs && outputItem.itemStock.batchs.length > 0 && (
       <Card className="mb-3">
         <div className="flex flex-row items-center gap-5">
-          <h1 className="flex">{outputItem.medication && `${outputItem.medication.active_principle} ${outputItem.medication.concentration}${outputItem.medication.concentration_unit} (${outputItem.medication.sku})`}</h1>
-          <Button color={'warning'} size={'sm'} onClick={() => onRemove(itemKey) }>Remover</Button>
+          <h1 className="flex">{outputItem.medication && `${outputItem.medication.active_principle} ${outputItem.medication.concentration}${outputItem.medication.concentration_unit}`} <code>{outputItem.medication.sku}</code></h1>
+          <Button color={'warning'} size={'sm'} onClick={() => onRemove(itemKey)}>Remover</Button>
         </div>
         <div className="my-6 flex gap-5">
           {outputItem.itemStock.batchs.filter((batch: any) => batch.amount > 0).map((batch: any, index: number) => (
