@@ -16,7 +16,21 @@ const PharmStockPage = () => {
          const items = await getItems({
             collection: 'pharma_stock', fields: ['*.*', 'sku.therapeutic_class.*', 'sku.form.*'],
          });
-         setStock(items);
+
+         const output = items.map((item: any) => {
+            return {
+               ...item,
+               totalAmount: (
+                  (item.batchs.length && item.batchs) || []
+               ).map(
+                  (batch: any) => batch.amount
+               ).reduce(
+                  (acc: number, next: number) => acc + next, 0
+               )
+            }
+         }).filter(item => item.totalAmount > 0);
+
+         setStock(output);
       })();
    }, [])
 
@@ -27,7 +41,21 @@ const PharmStockPage = () => {
             collection: 'pharma_stock',
             fields: ['*.*', 'sku.therapeutic_class.*', 'sku.form.*'],
          });
-         setStock(items);
+
+         const output = items.map((item: any) => {
+            return {
+               ...item,
+               totalAmount: (
+                  (item.batchs.length && item.batchs) || []
+               ).map(
+                  (batch: any) => batch.amount
+               ).reduce(
+                  (acc: number, next: number) => acc + next, 0
+               )
+            }
+         }).filter(item => item.totalAmount > 0);
+
+         setStock(output);
       })();
    }
 
@@ -68,7 +96,22 @@ const PharmStockPage = () => {
             fields: ['*.*', 'sku.therapeutic_class.*', 'sku.form.*'],
             filterRules: filter
          });
-         setStock(items);
+
+         const output = items.map((item: any) => {
+            return {
+               ...item,
+               totalAmount: (
+                  (item.batchs.length && item.batchs) || []
+               ).map(
+                  (batch: any) => batch.amount
+               ).reduce(
+                  (acc: number, next: number) => acc + next, 0
+               )
+            }
+         }).filter(item => item.totalAmount > 0);
+         
+         console.log(output);
+         setStock(output);
       })();
    }
 
@@ -91,13 +134,13 @@ const PharmStockPage = () => {
             </Table.Head>
             <Table.Body>
                {stock.map((item: any) =>
-                  <Table.Row>
+                  <Table.Row key={item.id}>
                      <Table.Cell>{item.sku.sku}</Table.Cell>
                      <Table.Cell>{item.sku.active_principle}</Table.Cell>
                      <Table.Cell>{item.sku.concentration}{item.sku.concentration_unit}</Table.Cell>
                      <Table.Cell>{item.sku.form?.form || '-'}</Table.Cell>
                      <Table.Cell>{item.sku.therapeutic_class?.name || '-'}</Table.Cell>
-                     <Table.Cell>{((item.batchs.length && item.batchs) || []).map((batch: any) => batch.amount).reduce((acc: number, next: number) => acc + next, 0)}</Table.Cell>
+                     <Table.Cell>{item.totalAmount}</Table.Cell>
                   </Table.Row>
                )}
             </Table.Body>

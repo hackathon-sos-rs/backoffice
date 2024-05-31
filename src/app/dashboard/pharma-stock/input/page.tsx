@@ -30,7 +30,7 @@ export default function PharmaStockPage() {
   const [error, setError] = useFlash(null, 1000);
   const [success, setSuccess] = useFlash(null, 1000);
 
-  const [itemType, setItemType] = useState('');
+  const [itemType, setItemType] = useState('medicine');
   const [hasDueDate, setHasDueDate] = useState(false);
   const [batch, setBatch] = useState('');
 
@@ -238,12 +238,12 @@ export default function PharmaStockPage() {
     if (isMedicine) {
       medicineItem = {
         isFresh,
-        activePrinciple: currentProduct.active_principal || principle,
-        concentration: currentProduct.concentration || concentration,
-        concentrationUnit: currentProduct.concentration_unit || concentrationUnit.value,
-        form: currentProduct.form || medicineForm.value,
-        therapeuticClass: currentProduct.therapeutic_class || medicineTherapeuticClass.value,
-        volume: currentProduct.volume || medicineVolume,
+        activePrinciple: ((currentProduct && currentProduct.active_principal) || principle || "").toUpperCase(),
+        concentration: (currentProduct && currentProduct.concentration) || concentration,
+        concentrationUnit: (currentProduct && currentProduct.concentration_unit) || concentrationUnit.value,
+        form: (currentProduct && currentProduct.form) || medicineForm.value,
+        therapeuticClass: (currentProduct && currentProduct.therapeutic_class) || medicineTherapeuticClass.value,
+        volume: (currentProduct && currentProduct.volume) || medicineVolume,
       }
     }
   
@@ -389,17 +389,6 @@ export default function PharmaStockPage() {
 
         {(!currentProduct && alreadySearched) && (
           <>
-            <fieldset className="flex max-w-md flex-col gap-4">
-              <legend className="mb-4">Selecione o tipo do Item:</legend>
-              <div className="flex items-center gap-2">
-                <Radio id="generalItem" name="itemType" value="generalItem" onChange={(e) => setItemType('generalItem')} />
-                <Label htmlFor="generalItem">Item Geral</Label>
-              </div>
-              <div className="flex items-center gap-2">
-                <Radio id="medicine" name="itemType" value="medicine" onChange={(e) => setItemType('medicine')} />
-                <Label htmlFor="medicine">Medicamento</Label>
-              </div>
-            </fieldset>
             {itemType === 'generalItem' && (
               <>
                 <div className="my-6">
